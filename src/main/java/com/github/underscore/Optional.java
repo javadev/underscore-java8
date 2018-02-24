@@ -1,5 +1,7 @@
 package com.github.underscore;
 
+import java.util.function.Supplier;
+
 public final class Optional<T> {
     private static final Optional<?> EMPTY = new Optional();
     private final T arg;
@@ -63,9 +65,9 @@ public final class Optional<T> {
         }
     }
 
-    public <X extends Throwable> T orThrow(Function<? extends X> exceptionFunction) throws X {
+    public <X extends Throwable> T orThrow(Supplier<? extends X> exceptionFunction) throws X {
         if (absent) {
-            throw exceptionFunction.apply();
+            throw exceptionFunction.get();
         } else {
             return arg;
         }

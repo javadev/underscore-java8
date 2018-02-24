@@ -26,6 +26,7 @@ package com.github.underscore;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Underscore-java is a java port of Underscore.js.
@@ -915,6 +916,7 @@ public class $<T> {
         return first(iterable);
     }
 
+    @SafeVarargs
     public static <E> E head(final E ... array) {
         return first(array);
     }
@@ -956,6 +958,7 @@ public class $<T> {
         return initial((List<T>) iterable, n);
     }
 
+    @SafeVarargs
     public static <E> E last(final E ... array) {
         return array[array.length - 1];
     }
@@ -1036,6 +1039,7 @@ public class $<T> {
         return rest(list, n);
     }
 
+    @SafeVarargs
     public static <E> E[] tail(final E ... array) {
         return rest(array);
     }
@@ -1470,36 +1474,36 @@ public class $<T> {
         };
     }
 
-    public static <T> java.util.concurrent.ScheduledFuture<T> delay(final Function<T> function,
+    public static <T> java.util.concurrent.ScheduledFuture<T> delay(final Supplier<T> function,
         final int delayMilliseconds) {
         final java.util.concurrent.ScheduledExecutorService scheduler =
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
         final java.util.concurrent.ScheduledFuture<T> future = scheduler.schedule(
             new java.util.concurrent.Callable<T>() {
                 public T call() {
-                    return function.apply();
+                    return function.get();
                 }
             }, delayMilliseconds, java.util.concurrent.TimeUnit.MILLISECONDS);
         scheduler.shutdown();
         return future;
     }
 
-    public static <T> java.util.concurrent.ScheduledFuture<T> defer(final Function<T> function) {
+    public static <T> java.util.concurrent.ScheduledFuture<T> defer(final Supplier<T> function) {
         return delay(function, 0);
     }
 
-    public static <T> Function<T> throttle(final Function<T> function, final int waitMilliseconds) {
-        class ThrottleFunction<T> implements Function<T> {
-            private final Function<T> localFunction;
+    public static <T> Supplier<T> throttle(final Supplier<T> function, final int waitMilliseconds) {
+        class ThrottleFunction<T> implements Supplier<T> {
+            private final Supplier<T> localFunction;
             private long previous;
             private java.util.concurrent.ScheduledFuture<T> timeout;
 
-            ThrottleFunction(final Function<T> function) {
+            ThrottleFunction(final Supplier<T> function) {
                 this.localFunction = function;
             }
 
             @Override
-            public T apply() {
+            public T get() {
                 final long now = now();
                 if (previous == 0L) {
                     previous = now;
@@ -1508,7 +1512,7 @@ public class $<T> {
                 if (remaining <= 0) {
                     clearTimeout(timeout);
                     previous = now;
-                    localFunction.apply();
+                    localFunction.get();
                 } else {
                     timeout = delay(localFunction, waitMilliseconds);
                 }
@@ -1518,12 +1522,12 @@ public class $<T> {
         return new ThrottleFunction<T>(function);
     }
 
-    public static <T> Function<T> debounce(final Function<T> function, final int delayMilliseconds) {
-        return new Function<T>() {
+    public static <T> Supplier<T> debounce(final Supplier<T> function, final int delayMilliseconds) {
+        return new Supplier<T>() {
             private java.util.concurrent.ScheduledFuture<T> timeout;
 
             @Override
-            public T apply() {
+            public T get() {
                 clearTimeout(timeout);
                 timeout = delay(function, delayMilliseconds);
                 return null;
@@ -1561,20 +1565,20 @@ public class $<T> {
         };
     }
 
-    public static <E> Function<E> after(final int count, final Function<E> function) {
-        class AfterFunction<E> implements Function<E> {
+    public static <E> Supplier<E> after(final int count, final Supplier<E> function) {
+        class AfterFunction<E> implements Supplier<E> {
             private final int count;
-            private final Function<E> localFunction;
+            private final Supplier<E> localFunction;
             private int index;
             private E result;
 
-            AfterFunction(final int count, final Function<E> function) {
+            AfterFunction(final int count, final Supplier<E> function) {
                 this.count = count;
                 this.localFunction = function;
             }
-            public E apply() {
+            public E get() {
                 if (++index >= count) {
-                    result = localFunction.apply();
+                    result = localFunction.get();
                 }
                 return result;
             }
@@ -1582,20 +1586,20 @@ public class $<T> {
         return new AfterFunction<E>(count, function);
     }
 
-    public static <E> Function<E> before(final int count, final Function<E> function) {
-        class BeforeFunction<E> implements Function<E> {
+    public static <E> Supplier<E> before(final int count, final Supplier<E> function) {
+        class BeforeFunction<E> implements Supplier<E> {
             private final int count;
-            private final Function<E> localFunction;
+            private final Supplier<E> localFunction;
             private int index;
             private E result;
 
-            BeforeFunction(final int count, final Function<E> function) {
+            BeforeFunction(final int count, final Supplier<E> function) {
                 this.count = count;
                 this.localFunction = function;
             }
-            public E apply() {
+            public E get() {
                 if (++index <= count) {
-                    result = localFunction.apply();
+                    result = localFunction.get();
                 }
                 return result;
             }
@@ -1603,15 +1607,15 @@ public class $<T> {
         return new BeforeFunction<E>(count, function);
     }
 
-    public static <T> Function<T> once(final Function<T> function) {
-        return new Function<T>() {
+    public static <T> Supplier<T> once(final Supplier<T> function) {
+        return new Supplier<T>() {
             private volatile boolean executed;
             private T result;
             @Override
-            public T apply() {
+            public T get() {
                 if (!executed) {
                     executed = true;
-                    result = function.apply();
+                    result = function.get();
                 }
                 return result;
             }
@@ -1871,9 +1875,9 @@ public class $<T> {
         return value;
     }
 
-    public static <E> Function<E> constant(final E value) {
-        return new Function<E>() {
-            public E apply() {
+    public static <E> Supplier<E> constant(final E value) {
+        return new Supplier<E>() {
+            public E get() {
                 return value;
             }
         };
@@ -1908,9 +1912,9 @@ public class $<T> {
         };
     }
 
-    public static <E> void times(final int count, final Function<E> function) {
+    public static <E> void times(final int count, final Supplier<E> function) {
         for (int index = 0; index < count; index += 1) {
-            function.apply();
+            function.get();
         }
     }
 
@@ -1940,8 +1944,8 @@ public class $<T> {
         for (E element : iterable) {
             if (pred.apply(element)) {
                 if (element instanceof Map.Entry) {
-                    if (((Map.Entry) element).getValue() instanceof Function) {
-                        return ((Function) ((Map.Entry) element).getValue()).apply();
+                    if (((Map.Entry) element).getValue() instanceof Supplier) {
+                        return ((Supplier) ((Map.Entry) element).getValue()).get();
                     }
                     return ((Map.Entry) element).getValue();
                 }
@@ -2437,6 +2441,7 @@ public class $<T> {
         return join(iterable);
     }
 
+    @SafeVarargs
     public static <T> List<T> push(final List<T> list, final T ... values) {
         final List<T> result = newArrayList(list);
         for (T value : values) {
@@ -2457,6 +2462,7 @@ public class $<T> {
         return pop((List<T>) getIterable());
     }
 
+    @SafeVarargs
     public static <T> List<T> unshift(final List<T> list, final T ... values) {
         final List<T> result = newArrayList(list);
         int index = 0;
@@ -2595,7 +2601,7 @@ public class $<T> {
         return string;
     }
 
-    public static <T> java.util.concurrent.ScheduledFuture<T> setTimeout(final Function<T> function,
+    public static <T> java.util.concurrent.ScheduledFuture<T> setTimeout(final Supplier<T> function,
         final int delayMilliseconds) {
         return delay(function, delayMilliseconds);
     }
@@ -2606,14 +2612,14 @@ public class $<T> {
         }
     }
 
-    public static <T> java.util.concurrent.ScheduledFuture setInterval(final Function<T> function,
+    public static <T> java.util.concurrent.ScheduledFuture setInterval(final Supplier<T> function,
         final int delayMilliseconds) {
         final java.util.concurrent.ScheduledExecutorService scheduler =
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
         final java.util.concurrent.ScheduledFuture future = scheduler.scheduleAtFixedRate(
             new Runnable() {
                 public void run() {
-                    function.apply();
+                    function.get();
                 }
             }, delayMilliseconds, delayMilliseconds, java.util.concurrent.TimeUnit.MILLISECONDS);
         return future;

@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Supplier;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -56,7 +57,7 @@ stooge === _.constant(stooge)();
     @Test
     public void constant() {
         Map<String, String> object = new LinkedHashMap<String, String>() { { put("name", "moe"); } };
-        assertEquals(object, $.constant(object).apply());
+        assertEquals(object, $.constant(object).get());
     }
 
 /*
@@ -145,8 +146,8 @@ _.times(3, function(n){ genie.grantWishNumber(n); });
     @Test
     public void times() {
         final List<Integer> result = new ArrayList<Integer>();
-        $.times(3, new Function<Integer>() {
-            public Integer apply() {
+        $.times(3, new Supplier<Integer>() {
+            public Integer get() {
                 result.add(1);
                 return null;
             }
@@ -307,7 +308,7 @@ _.result(object, 'stuff');
     public void result() {
         Map<String, Object> object = new LinkedHashMap<String, Object>() { {
             put("cheese", "crumpets");
-            put("stuff", new Function<String>() { public String apply() {
+            put("stuff", new Supplier<String>() { public String get() {
                 return "nonsense"; } });
         } };
 

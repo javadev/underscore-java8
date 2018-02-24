@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Supplier;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
@@ -397,8 +398,8 @@ _.elementAtOrNull(arr, 3) // => null
 
     @Test(expected = Exception.class)
     public void optionalOrThrow() throws RuntimeException {
-        Optional.absent().orThrow(new Function<RuntimeException>() {
-            public RuntimeException apply() {
+        Optional.absent().orThrow(new Supplier<RuntimeException>() {
+            public RuntimeException get() {
                 return new RuntimeException();
             }
         });
@@ -406,8 +407,8 @@ _.elementAtOrNull(arr, 3) // => null
 
     @Test
     public void optionalOrThrowWithValue() {
-        assertEquals("1", Optional.of(1).orThrow(new Function<RuntimeException>() {
-            public RuntimeException apply() {
+        assertEquals("1", Optional.of(1).orThrow(new Supplier<RuntimeException>() {
+            public RuntimeException get() {
                 return new RuntimeException();
             }
         }).toString());

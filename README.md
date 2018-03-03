@@ -2,7 +2,7 @@ underscore-java8
 ================
 
 [![MIT License](http://img.shields.io/badge/license-MIT-green.svg) ](https://github.com/javadev/underscore-java8/blob/master/LICENSE.txt)
-[![Build Status](https://secure.travis-ci.org/javadev/underscore-java.svg)](https://travis-ci.org/javadev/underscore-java8)
+[![Build Status](https://secure.travis-ci.org/javadev/underscore-java8.svg)](https://travis-ci.org/javadev/underscore-java8)
 
 Requirements
 ============

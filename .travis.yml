@@ -1,0 +1,19 @@
+language: java
+dist: trusty
+
+jdk:
+  - oraclejdk8
+
+script:
+  - mvn clean install jacoco:report coveralls:report
+
+addons:
+   hosts:
+       - travis
+   hostname: travis
+
+before_script:
+  - pip install --user codecov
+
+after_success:
+  - codecov

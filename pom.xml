@@ -6,8 +6,8 @@
   <artifactId>underscore8</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
-  <name>java port of Underscore.js</name>
-  <description>The java port of Underscore.js</description>
+  <name>java 8 port of Underscore.js</name>
+  <description>The java 8 port of Underscore.js</description>
   <url>https://github.com/javadev/underscore-java8</url>
   
   <developers>
@@ -123,44 +123,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-          <groupId>com.github.wvengen</groupId>
-          <artifactId>proguard-maven-plugin</artifactId>
-          <version>2.0.14</version>
-          <executions>
-             <execution>
-                 <phase>package</phase>
-                 <goals><goal>proguard</goal></goals>
-             </execution>
-          </executions>
-          <configuration>
-              <options>
-                  <option>-allowaccessmodification</option>
-                  <option>-keepattributes Signature,InnerClasses</option>
-                  <option>-keep public class com.github.underscore.$ { *; }</option>
-                  <option>-keep public class com.github.underscore.*$Chain { *; }</option>
-                  <option>-keep public class com.github.underscore.Block { *; }</option>
-                  <option>-keep public class com.github.underscore.Function { *; }</option>
-                  <option>-keep public class com.github.underscore.Function1 { *; }</option>
-                  <option>-keep public class com.github.underscore.Function2 { *; }</option>
-                  <option>-keep public class com.github.underscore.Function3 { *; }</option>
-                  <option>-keep public class com.github.underscore.Function4 { *; }</option>
-                  <option>-keep public class com.github.underscore.FunctionAccum { *; }</option>
-                  <option>-keep public class com.github.underscore.MemoizeFunction1 { *; }</option>
-                  <option>-keep public class com.github.underscore.Optional { *; }</option>
-                  <option>-keep public class com.github.underscore.Predicate { *; }</option>
-                  <option>-keep public class com.github.underscore.PredicateIndexed { *; }</option>
-                  <option>-keep public class com.github.underscore.Template { *; }</option>
-                  <option>-keep public class com.github.underscore.Tuple { *; }</option>
-                  <option>-keep public class com.github.underscore.UnaryOperator { *; }</option>
-                  <option>-keepclassmembers class * { *** newArrayList(); *** newLinkedHashSet(); *** newHashSet(java.lang.Iterable); *** newLinkedHashMap(); }</option>
-                  <option>-dontnote com.github.underscore.*$ClassForName</option>
-              </options>
-              <libs>
-                  <lib>${java.home}/lib/rt.jar</lib>
-              </libs>
-          </configuration>
       </plugin>
       <plugin>
           <groupId>org.apache.maven.plugins</groupId>

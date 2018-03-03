@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2015-2017 Valentyn Kolesnikov
+ * Copyright 2015-2018 Valentyn Kolesnikov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -2532,9 +2532,14 @@ public class $<T> {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T[] slice(final T[] array, final int start) {
-        return (T[]) slice(Arrays.asList(array), start).toArray();
+        final T[] result;
+        if (start >= 0) {
+            result = Arrays.copyOfRange(array, start, array.length);
+        } else {
+            result = Arrays.copyOfRange(array, array.length + start, array.length);
+        }
+        return result;
     }
 
     public List<T> slice(final int start) {
@@ -2559,9 +2564,22 @@ public class $<T> {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T[] slice(final T[] array, final int start, final int end) {
-        return (T[]) slice(Arrays.asList(array), start, end).toArray();
+        final T[] result;
+        if (start >= 0) {
+            if (end > 0) {
+                result = Arrays.copyOfRange(array, start, end);
+            } else {
+                result = Arrays.copyOfRange(array, start, array.length + end);
+            }
+        } else {
+            if (end > 0) {
+                result = Arrays.copyOfRange(array, array.length + start, end);
+            } else {
+                result = Arrays.copyOfRange(array, array.length + start, array.length + end);
+            }
+        }
+        return result;
     }
 
     public List<T> slice(final int start, final int end) {

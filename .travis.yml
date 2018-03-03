@@ -3,6 +3,7 @@ dist: trusty
 
 jdk:
   - oraclejdk8
+  - oraclejdk9
 
 script:
   - mvn clean install jacoco:report coveralls:report

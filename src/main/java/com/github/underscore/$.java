@@ -26,6 +26,7 @@ package com.github.underscore;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -218,37 +219,37 @@ public class $<T> {
         };
     }
 
-    public static <T> void each(final Iterable<T> iterable, final Block<? super T> func) {
+    public static <T> void each(final Iterable<T> iterable, final Consumer<? super T> func) {
         for (T element : iterable) {
-            func.apply(element);
+            func.accept(element);
         }
     }
 
-    public void each(final Block<? super T> func) {
+    public void each(final Consumer<? super T> func) {
         each(iterable, func);
     }
 
-    public static <T> void eachRight(final Iterable<T> iterable, final Block<? super T> func) {
+    public static <T> void eachRight(final Iterable<T> iterable, final Consumer<? super T> func) {
         each(reverse(iterable), func);
     }
 
-    public void eachRight(final Block<? super T> func) {
+    public void eachRight(final Consumer<? super T> func) {
         eachRight(iterable, func);
     }
 
-    public static <T> void forEach(final Iterable<T> iterable, final Block<? super T> func) {
+    public static <T> void forEach(final Iterable<T> iterable, final Consumer<? super T> func) {
         each(iterable, func);
     }
 
-    public void forEach(final Block<? super T> func) {
+    public void forEach(final Consumer<? super T> func) {
         each(iterable, func);
     }
 
-    public static <T> void forEachRight(final Iterable<T> iterable, final Block<? super T> func) {
+    public static <T> void forEachRight(final Iterable<T> iterable, final Consumer<? super T> func) {
         eachRight(iterable, func);
     }
 
-    public void forEachRight(final Block<? super T> func) {
+    public void forEachRight(final Consumer<? super T> func) {
         eachRight(iterable, func);
     }
 
@@ -1296,9 +1297,9 @@ public class $<T> {
     @SuppressWarnings("unchecked")
     public static <T> List<List<T>> zip(final List<T> ... lists) {
         final List<List<T>> zipped = newArrayList();
-        each(Arrays.asList(lists), new Block<List<T>>() {
+        each(Arrays.asList(lists), new Consumer<List<T>>() {
             @Override
-            public void apply(final List<T> list) {
+            public void accept(final List<T> list) {
                 int index = 0;
                 for (T elem : list) {
                     final List<T> nTuple = index >= zipped.size() ? $.<T>newArrayList() : zipped.get(index);
@@ -1798,7 +1799,7 @@ public class $<T> {
         return Arrays.copyOf(iterable, iterable.length);
     }
 
-    public static <T> void tap(final Iterable<T> iterable, final Block<? super T> func) {
+    public static <T> void tap(final Iterable<T> iterable, final Consumer<? super T> func) {
         each(iterable, func);
     }
 
@@ -2208,17 +2209,17 @@ public class $<T> {
             return new Chain<T>($.newArrayList($.sample(list, howMany)));
         }
 
-        public Chain<T> tap(final Block<T> func) {
+        public Chain<T> tap(final Consumer<T> func) {
             $.each(list, func);
             return new Chain<T>(list);
         }
 
-        public Chain<T> forEach(final Block<T> func) {
+        public Chain<T> forEach(final Consumer<T> func) {
             $.each(list, func);
             return new Chain<T>(list);
         }
 
-        public Chain<T> forEachRight(final Block<T> func) {
+        public Chain<T> forEachRight(final Consumer<T> func) {
             $.eachRight(list, func);
             return new Chain<T>(list);
         }

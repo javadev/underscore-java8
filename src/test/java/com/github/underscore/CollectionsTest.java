@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Consumer;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -45,15 +46,15 @@ _.each([1, 2, 3], alert);
     @SuppressWarnings("unchecked")
     public void each() {
         final List<Integer> result = new ArrayList<Integer>();
-        $.<Integer>each(asList(1, 2, 3), new Block<Integer>() {
-            public void apply(Integer item) {
+        $.<Integer>each(asList(1, 2, 3), new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
             }
         });
         assertEquals("[1, 2, 3]", result.toString());
         final List<Integer> result2 = new ArrayList<Integer>();
-        new $(asList(1, 2, 3)).each(new Block<Integer>() {
-            public void apply(Integer item) {
+        new $(asList(1, 2, 3)).each(new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result2.add(item);
             }
         });
@@ -68,15 +69,15 @@ _.eachRight([1, 2, 3], alert);
     @SuppressWarnings("unchecked")
     public void eachRight() {
         final List<Integer> result = new ArrayList<Integer>();
-        $.eachRight(asList(1, 2, 3), new Block<Integer>() {
-            public void apply(Integer item) {
+        $.eachRight(asList(1, 2, 3), new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
             }
         });
         assertEquals("[3, 2, 1]", result.toString());
         final List<Integer> result2 = new ArrayList<Integer>();
-        new $(asList(1, 2, 3)).eachRight(new Block<Integer>() {
-            public void apply(Integer item) {
+        new $(asList(1, 2, 3)).eachRight(new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result2.add(item);
             }
         });
@@ -90,16 +91,16 @@ _.forEach([1, 2, 3], alert);
     @Test
     public void forEach() {
         final List<Integer> result = new ArrayList<Integer>();
-        $.forEach(asList(1, 2, 3), new Block<Integer>() {
-            public void apply(Integer item) {
+        $.forEach(asList(1, 2, 3), new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
             }
         });
         assertEquals("[1, 2, 3]", result.toString());
         final List<Map.Entry<String, Integer>> resultChain = new ArrayList<Map.Entry<String, Integer>>();
         $.chain((new LinkedHashMap<String, Integer>() { { put("a", 1); put("b", 2); put("c", 3); } }).entrySet())
-            .forEach(new Block<Map.Entry<String, Integer>>() {
-                public void apply(final Map.Entry<String, Integer> item) {
+            .forEach(new Consumer<Map.Entry<String, Integer>>() {
+                public void accept(final Map.Entry<String, Integer> item) {
                     resultChain.add(item);
                 }
             });
@@ -114,23 +115,23 @@ _.forEach([1, 2, 3], alert);
     @SuppressWarnings("unchecked")
     public void forEachRight() {
         final List<Integer> result = new ArrayList<Integer>();
-        $.forEachRight(asList(1, 2, 3), new Block<Integer>() {
-            public void apply(Integer item) {
+        $.forEachRight(asList(1, 2, 3), new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
             }
         });
         assertEquals("[3, 2, 1]", result.toString());
         final List<Integer> result2 = new ArrayList<Integer>();
-        new $(asList(1, 2, 3)).forEachRight(new Block<Integer>() {
-            public void apply(Integer item) {
+        new $(asList(1, 2, 3)).forEachRight(new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result2.add(item);
             }
         });
         assertEquals("[3, 2, 1]", result2.toString());
         final List<Map.Entry<String, Integer>> resultChain = new ArrayList<Map.Entry<String, Integer>>();
         $.chain((new LinkedHashMap<String, Integer>() { { put("a", 1); put("b", 2); put("c", 3); } }).entrySet())
-            .forEachRight(new Block<Map.Entry<String, Integer>>() {
-                public void apply(final Map.Entry<String, Integer> item) {
+            .forEachRight(new Consumer<Map.Entry<String, Integer>>() {
+                public void accept(final Map.Entry<String, Integer> item) {
                     resultChain.add(item);
                 }
             });
@@ -145,8 +146,8 @@ _([1, 2, 3]).forEach(alert);
     @SuppressWarnings("unchecked")
     public void forEachObj() {
         final List<Integer> result = new ArrayList<Integer>();
-        new $(asList(1, 2, 3)).forEach(new Block<Integer>() {
-            public void apply(Integer item) {
+        new $(asList(1, 2, 3)).forEach(new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
             }
         });
@@ -162,8 +163,8 @@ _.each({one: 1, two: 2, three: 3}, alert);
         final List<String> result = new ArrayList<String>();
         $.<Map.Entry<String, Integer>>each((new LinkedHashMap<String, Integer>() { {
             put("one", 1); put("two", 2); put("three", 3); } }).entrySet(),
-            new Block<Map.Entry<String, Integer>>() {
-            public void apply(Map.Entry<String, Integer> item) {
+            new Consumer<Map.Entry<String, Integer>>() {
+            public void accept(Map.Entry<String, Integer> item) {
                 result.add(item.getKey());
             }
         });

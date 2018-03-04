@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.junit.Test;
 import static java.util.Arrays.asList;
@@ -270,8 +271,8 @@ _.each(notes, function(note) {
             new Supplier<Integer>() { public Integer get() {
                 return 4; } });
         final List<Integer> result = new ArrayList<Integer>();
-        $.<Integer>each(notes, new Block<Integer>() {
-            public void apply(Integer item) {
+        $.<Integer>each(notes, new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
                 Integer afterResult = renderNotes.get();
                 if (afterResult != null) {
@@ -296,8 +297,8 @@ monthlyMeeting();
             new Supplier<Integer>() { public Integer get() {
                 return 4; } });
         final List<Integer> result = new ArrayList<Integer>();
-        $.<Integer>each(notes, new Block<Integer>() {
-            public void apply(Integer item) {
+        $.<Integer>each(notes, new Consumer<Integer>() {
+            public void accept(Integer item) {
                 result.add(item);
                 Integer afterResult = renderNotes.get();
                 if (afterResult != null) {

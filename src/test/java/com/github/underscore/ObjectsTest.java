@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Consumer;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -365,16 +366,16 @@ _.chain([1,2,3,200])
     public void tap() {
         final List<Map.Entry<String, Integer>> result = new ArrayList<Map.Entry<String, Integer>>();
         $.tap((new LinkedHashMap<String, Integer>() { { put("a", 1); put("b", 2); put("c", 3); } }).entrySet(),
-            new Block<Map.Entry<String, Integer>>() {
-                public void apply(final Map.Entry<String, Integer> item) {
+            new Consumer<Map.Entry<String, Integer>>() {
+                public void accept(final Map.Entry<String, Integer> item) {
                     result.add(item);
                 }
             });
         assertEquals("[a=1, b=2, c=3]", result.toString());
         final List<Map.Entry<String, Integer>> resultChain = new ArrayList<Map.Entry<String, Integer>>();
         $.chain((new LinkedHashMap<String, Integer>() { { put("a", 1); put("b", 2); put("c", 3); } }).entrySet())
-            .tap(new Block<Map.Entry<String, Integer>>() {
-                public void apply(final Map.Entry<String, Integer> item) {
+            .tap(new Consumer<Map.Entry<String, Integer>>() {
+                public void accept(final Map.Entry<String, Integer> item) {
                     resultChain.add(item);
                 }
             });

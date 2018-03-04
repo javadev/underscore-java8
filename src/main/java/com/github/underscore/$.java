@@ -2333,6 +2333,7 @@ public class $<T> {
             return new Chain<String>($.join(list, separator));
         }
 
+        @SuppressWarnings("unchecked")
         public Chain<T> push(final T ... values) {
             return new Chain<T>($.push(value(), values));
         }
@@ -2345,6 +2346,7 @@ public class $<T> {
             return new Chain<Tuple<T, List<T>>>($.shift(value()));
         }
 
+        @SuppressWarnings("unchecked")
         public Chain<T> unshift(final T ... values) {
             return new Chain<T>($.unshift(value(), values));
         }
@@ -2454,6 +2456,7 @@ public class $<T> {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public List<T> push(final T ... values) {
         return push((List<T>) getIterable(), values);
     }
@@ -2477,6 +2480,7 @@ public class $<T> {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public List<T> unshift(final T ... values) {
         return unshift((List<T>) getIterable(), values);
     }
@@ -2813,7 +2817,7 @@ public class $<T> {
     }
 
     public static void main(String ... args) {
-        final String message = "Underscore-java is a java port of Underscore.js.\n\n"
+        final String message = "Underscore-java8 is a java 8 port of Underscore.js.\n\n"
             + "In addition to porting Underscore's functionality, Underscore-java includes matching unit tests.\n\n"
             + "For docs, license, tests, and downloads, see: http://javadev.github.io/underscore-java";
         System.out.println(message);

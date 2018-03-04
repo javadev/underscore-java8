@@ -25,6 +25,8 @@ package com.github.underscore;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.junit.Test;
 import static java.util.Arrays.asList;
@@ -46,7 +48,7 @@ func();
 */
     @Test
     public void bind() {
-        class GreetingFunction implements Function1<String, String> {
+        class GreetingFunction implements Function<String, String> {
             private final String name;
             public GreetingFunction(final String name) {
                 this.name = name;
@@ -66,7 +68,7 @@ sub5(20);
 */
     @Test
     public void partial() {
-        class SubtractFunction implements Function1<Integer, Integer> {
+        class SubtractFunction implements Function<Integer, Integer> {
             private final Integer arg1;
             public SubtractFunction(final Integer arg1) {
                 this.arg1 = arg1;
@@ -75,7 +77,7 @@ sub5(20);
                 return arg2 - arg1;
             }
         }
-        Function1<Integer, Integer> sub5 = new SubtractFunction(5);
+        Function<Integer, Integer> sub5 = new SubtractFunction(5);
         assertEquals(15, sub5.apply(20).intValue());
     }
 
@@ -86,14 +88,14 @@ var fibonacci = _.memoize(function(n) {
 */
     @Test
     public void memoize() {
-        class FibonacciFuncion1 extends MemoizeFunction1<Integer, Integer> {
+        class FibonacciFuncion1 extends MemoizeFunction<Integer, Integer> {
             public Integer calc(final Integer n) {
                 return n < 2 ? n : apply(n - 1) + apply(n - 2);
             }
         }
         assertEquals(55, new FibonacciFuncion1().apply(10).intValue());
-        Function1<Integer, Integer> memoizeFunction = $.memoize(
-            new Function1<Integer, Integer>() {
+        Function<Integer, Integer> memoizeFunction = $.memoize(
+            new Function<Integer, Integer>() {
                 public Integer apply(final Integer n) {
                     return n < 2 ? n : apply(n - 1) + apply(n - 2);
                 }
@@ -204,13 +206,13 @@ hello();
 */
     @Test
     public void wrap() {
-        Function1<String, String> hello = new Function1<String, String>() {
+        Function<String, String> hello = new Function<String, String>() {
             public String apply(final String name) {
                 return "hello: " + name;
             }
         };
-        Function1<Void, String> result = $.wrap(hello, new Function1<Function1<String, String>, String>() {
-            public String apply(final Function1<String, String> func) {
+        Function<Void, String> result = $.wrap(hello, new Function<Function<String, String>, String>() {
+            public String apply(final Function<String, String> func) {
                 return "before, " + func.apply("moe") + ", after";
             }
         });
@@ -225,7 +227,7 @@ _.find([-2, -1, 0, 1, 2], isFalsy);
     @Test
     public void negate() {
         Predicate<Integer> isFalsy = $.negate(new Predicate<Integer>() {
-            public Boolean apply(final Integer item) {
+            public boolean test(final Integer item) {
                 return item != 0;
             }
         });
@@ -243,17 +245,17 @@ welcome('moe');
     @Test
     @SuppressWarnings("unchecked")
     public void compose() {
-        Function1<String, String> greet = new Function1<String, String>() {
+        Function<String, String> greet = new Function<String, String>() {
             public String apply(final String name) {
                 return "hi: " + name;
             }
         };
-        Function1<String, String> exclaim = new Function1<String, String>() {
+        Function<String, String> exclaim = new Function<String, String>() {
             public String apply(final String statement) {
                 return statement.toUpperCase() + "!";
             }
         };
-        Function1<String, String> welcome = $.compose(greet, exclaim);
+        Function<String, String> welcome = $.compose(greet, exclaim);
         assertEquals("hi: MOE!", welcome.apply("moe"));
     }
 

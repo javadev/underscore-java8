@@ -27,7 +27,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Underscore-java is a java port of Underscore.js.
@@ -35,7 +38,7 @@ import java.util.function.Supplier;
  * @author Valentyn Kolesnikov
  */
 public class $<T> {
-    private static final Map<String, Function1<String, String>> FUNCTIONS = newLinkedHashMap();
+    private static final Map<String, Function<String, String>> FUNCTIONS = newLinkedHashMap();
     private static final Map<String, String> TEMPLATE_SETTINGS = new HashMap<String, String>() { {
         put("evaluate", "<%([\\s\\S]+?)%>");
         put("interpolate", "<%=([\\s\\S]+?)%>");
@@ -83,7 +86,7 @@ public class $<T> {
         }
 
         @Override
-        public Boolean apply(final E elem) {
+        public boolean test(final E elem) {
             for (Tuple<String, T> prop : properties) {
                 try {
                     if (!elem.getClass().getField(prop.fst()).get(elem).equals(prop.snd())) {
@@ -211,8 +214,8 @@ public class $<T> {
         }
     }
 
-    public static <K, V> Function1<Map<K, V>, V> iteratee(final K key) {
-        return new Function1<Map<K, V>, V>() {
+    public static <K, V> Function<Map<K, V>, V> iteratee(final K key) {
+        return new Function<Map<K, V>, V>() {
             public V apply(Map<K, V> item) {
                 return item.get(key);
             }
@@ -253,7 +256,7 @@ public class $<T> {
         eachRight(iterable, func);
     }
 
-    public static <T, E> List<T> map(final List<E> list, final Function1<? super E, T> func) {
+    public static <T, E> List<T> map(final List<E> list, final Function<? super E, T> func) {
         final List<T> transformed = newArrayListWithExpectedSize(list.size());
         for (E element : list) {
             transformed.add(func.apply(element));
@@ -261,11 +264,11 @@ public class $<T> {
         return transformed;
     }
 
-    public <F> List<F> map(final Function1<? super T, F> func) {
+    public <F> List<F> map(final Function<? super T, F> func) {
         return map(newArrayList(iterable), func);
     }
 
-    public static <T> List<T> map(final int[] array, final Function1<? super Integer, T> func) {
+    public static <T> List<T> map(final int[] array, final Function<? super Integer, T> func) {
         final List<T> transformed = newArrayListWithExpectedSize(array.length);
         for (int element : array) {
             transformed.add(func.apply(element));
@@ -273,7 +276,7 @@ public class $<T> {
         return transformed;
     }
 
-    public static <T, E> Set<T> map(final Set<E> set, final Function1<? super E, T> func) {
+    public static <T, E> Set<T> map(final Set<E> set, final Function<? super E, T> func) {
         final Set<T> transformed = newLinkedHashSetWithExpectedSize(set.size());
         for (E element : set) {
             transformed.add(func.apply(element));
@@ -281,11 +284,11 @@ public class $<T> {
         return transformed;
     }
 
-    public static <T, E> List<T> collect(final List<E> list, final Function1<? super E, T> func) {
+    public static <T, E> List<T> collect(final List<E> list, final Function<? super E, T> func) {
         return map(list, func);
     }
 
-    public static <T, E> Set<T> collect(final Set<E> set, final Function1<? super E, T> func) {
+    public static <T, E> Set<T> collect(final Set<E> set, final Function<? super E, T> func) {
         return map(set, func);
     }
 
@@ -343,7 +346,7 @@ public class $<T> {
 
     public static <E> Optional<E> find(final Iterable<E> iterable, final Predicate<E> pred) {
         for (E element : iterable) {
-            if (pred.apply(element)) {
+            if (pred.test(element)) {
                 return Optional.of(element);
             }
         }
@@ -361,7 +364,7 @@ public class $<T> {
     public static <E> List<E> filter(final List<E> list, final Predicate<E> pred) {
         final List<E> filtered = newArrayList();
         for (E element : list) {
-            if (pred.apply(element)) {
+            if (pred.test(element)) {
                 filtered.add(element);
             }
         }
@@ -371,7 +374,7 @@ public class $<T> {
     public List<T> filter(final Predicate<T> pred) {
         final List<T> filtered = newArrayList();
         for (final T element : value()) {
-            if (pred.apply(element)) {
+            if (pred.test(element)) {
                 filtered.add(element);
             }
         }
@@ -382,7 +385,7 @@ public class $<T> {
         final List<E> filtered = newArrayList();
         int index = 0;
         for (E element : list) {
-            if (pred.apply(index, element)) {
+            if (pred.test(index, element)) {
                 filtered.add(element);
             }
             index += 1;
@@ -393,7 +396,7 @@ public class $<T> {
     public static <E> Set<E> filter(final Set<E> set, final Predicate<E> pred) {
         final Set<E> filtered = newLinkedHashSet();
         for (E element : set) {
-            if (pred.apply(element)) {
+            if (pred.test(element)) {
                 filtered.add(element);
             }
         }
@@ -411,8 +414,8 @@ public class $<T> {
     public static <E> List<E> reject(final List<E> list, final Predicate<E> pred) {
         return filter(list, new Predicate<E>() {
             @Override
-            public Boolean apply(E input) {
-                return !pred.apply(input);
+            public boolean test(E input) {
+                return !pred.test(input);
             }
         });
     }
@@ -420,8 +423,8 @@ public class $<T> {
     public List<T> reject(final Predicate<T> pred) {
         return filter(new Predicate<T>() {
             @Override
-            public Boolean apply(T input) {
-                return !pred.apply(input);
+            public boolean test(T input) {
+                return !pred.test(input);
             }
         });
     }
@@ -429,8 +432,8 @@ public class $<T> {
     public static <E> List<E> rejectIndexed(final List<E> list, final PredicateIndexed<E> pred) {
         return filterIndexed(list, new PredicateIndexed<E>() {
             @Override
-            public boolean apply(int index, E input) {
-                return !pred.apply(index, input);
+            public boolean test(int index, E input) {
+                return !pred.test(index, input);
             }
         });
     }
@@ -438,8 +441,8 @@ public class $<T> {
     public static <E> Set<E> reject(final Set<E> set, final Predicate<E> pred) {
         return filter(set, new Predicate<E>() {
             @Override
-            public Boolean apply(E input) {
-                return !pred.apply(input);
+            public boolean test(E input) {
+                return !pred.test(input);
             }
         });
     }
@@ -459,8 +462,8 @@ public class $<T> {
     public static <E> boolean every(final Iterable<E> iterable, final Predicate<E> pred) {
         return !find(iterable, new Predicate<E>() {
             @Override
-            public Boolean apply(E arg) {
-                return !pred.apply(arg);
+            public boolean test(E arg) {
+                return !pred.test(arg);
             }
         }).isPresent();
     }
@@ -496,7 +499,7 @@ public class $<T> {
     public static <E> boolean contains(final Iterable<E> iterable, final E elem) {
         return some(iterable, new Predicate<E>() {
             @Override
-            public Boolean apply(E e) {
+            public boolean test(E e) {
                 return elem == null ? e == null : elem.equals(e);
             }
         });
@@ -519,7 +522,7 @@ public class $<T> {
     public static <E> List<E> invoke(final Iterable<E> iterable, final String methodName,
                                   final List<Object> args) {
         final List<E> result = newArrayList();
-        final List<Class<?>> argTypes = map(args, new Function1<Object, Class<?>>() {
+        final List<Class<?>> argTypes = map(args, new Function<Object, Class<?>>() {
             public Class<?> apply(Object input) {
                 return input.getClass();
             }
@@ -556,7 +559,7 @@ public class $<T> {
         if (list.isEmpty()) {
             return Collections.emptyList();
         }
-        return map(list, new Function1<E, Object>() {
+        return map(list, new Function<E, Object>() {
             @Override
             public Object apply(E elem) {
                 try {
@@ -580,7 +583,7 @@ public class $<T> {
         if (set.isEmpty()) {
             return Collections.emptySet();
         }
-        return map(set, new Function1<E, Object>() {
+        return map(set, new Function<E, Object>() {
             @Override
             public Object apply(E elem) {
                 try {
@@ -630,7 +633,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, F extends Comparable> E max(final Collection<E> collection, final Function1<E, F> func) {
+    public static <E, F extends Comparable> E max(final Collection<E> collection, final Function<E, F> func) {
         return Collections.max(collection, new Comparator<E>() {
             @Override
             public int compare(E o1, E o2) {
@@ -640,7 +643,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <F extends Comparable<? super F>> T max(final Function1<T, F> func) {
+    public <F extends Comparable<? super F>> T max(final Function<T, F> func) {
         return (T) max((Collection) iterable, func);
     }
 
@@ -654,7 +657,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, F extends Comparable> E min(final Collection<E> collection, final Function1<E, F> func) {
+    public static <E, F extends Comparable> E min(final Collection<E> collection, final Function<E, F> func) {
         return Collections.min(collection, new Comparator<E>() {
             @Override
             public int compare(E o1, E o2) {
@@ -664,7 +667,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <F extends Comparable<? super F>> T min(final Function1<T, F> func) {
+    public <F extends Comparable<? super F>> T min(final Function<T, F> func) {
         return (T) min((Collection) iterable, func);
     }
 
@@ -709,7 +712,7 @@ public class $<T> {
     }
 
     public static <E, T extends Comparable<? super T>> List<E> sortBy(final Iterable<E> iterable,
-        final Function1<E, T> func) {
+        final Function<E, T> func) {
         final List<E> sortedList = newArrayList(iterable);
         Collections.sort(sortedList, new Comparator<E>() {
             @Override
@@ -721,7 +724,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <E, V extends Comparable<? super V>> List<E> sortBy(final Function1<E, V> func) {
+    public <E, V extends Comparable<? super V>> List<E> sortBy(final Function<E, V> func) {
         return sortBy((Iterable<E>) iterable, func);
     }
 
@@ -737,7 +740,7 @@ public class $<T> {
         return sortedList;
     }
 
-    public static <K, E> Map<K, List<E>> groupBy(final Iterable<E> iterable, final Function1<E, K> func) {
+    public static <K, E> Map<K, List<E>> groupBy(final Iterable<E> iterable, final Function<E, K> func) {
         final Map<K, List<E>> retVal = newLinkedHashMap();
         for (E e : iterable) {
             final K key = func.apply(e);
@@ -754,13 +757,13 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <K, E> Map<K, List<E>> groupBy(final Function1<E, K> func) {
+    public <K, E> Map<K, List<E>> groupBy(final Function<E, K> func) {
         return groupBy((Iterable<E>) iterable, func);
     }
 
     @SuppressWarnings("unchecked")
     public static <K, E> Map<K, List<E>> indexBy(final Iterable<E> iterable, final String property) {
-        return groupBy(iterable, new Function1<E, K>() {
+        return groupBy(iterable, new Function<E, K>() {
             @Override
             public K apply(E elem) {
                 try {
@@ -777,7 +780,7 @@ public class $<T> {
         return indexBy((Iterable<E>) iterable, property);
     }
 
-    public static <K, E> Map<K, Integer> countBy(final Iterable<E> iterable, Function1<E, K> func) {
+    public static <K, E> Map<K, Integer> countBy(final Iterable<E> iterable, Function<E, K> func) {
         final Map<K, Integer> retVal = newLinkedHashMap();
         for (E e : iterable) {
             final K key = func.apply(e);
@@ -791,7 +794,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public <K, E> Map<K, Integer> countBy(Function1<E, K> func) {
+    public <K, E> Map<K, Integer> countBy(Function<E, K> func) {
         return countBy((Iterable<E>) iterable, func);
     }
 
@@ -852,7 +855,7 @@ public class $<T> {
         final List<E> retVal1 = newArrayList();
         final List<E> retVal2 = newArrayList();
         for (final E e : iterable) {
-            if (pred.apply(e)) {
+            if (pred.test(e)) {
                 retVal1.add(e);
             } else {
                 retVal2.add(e);
@@ -1077,7 +1080,7 @@ public class $<T> {
     public static <E> List<E> compact(final List<E> list) {
         return filter(list, new Predicate<E>() {
             @Override
-            public Boolean apply(E arg) {
+            public boolean test(E arg) {
                 return !String.valueOf(arg).equals("null") && !String.valueOf(arg).equals("0")
                     && !String.valueOf(arg).equals("false") && !String.valueOf(arg).equals("");
             }
@@ -1092,7 +1095,7 @@ public class $<T> {
     public static <E> List<E> compact(final List<E> list, final E falsyValue) {
         return filter(list, new Predicate<E>() {
             @Override
-            public Boolean apply(E arg) {
+            public boolean test(E arg) {
                 return !(arg == null ? falsyValue == null : arg.equals(falsyValue));
             }
         });
@@ -1148,7 +1151,7 @@ public class $<T> {
         final List<E> valuesList = Arrays.asList(values);
         return filter(list, new Predicate<E>() {
             @Override
-            public Boolean apply(E elem) {
+            public boolean test(E elem) {
                 return !contains(valuesList, elem);
             }
         });
@@ -1168,7 +1171,7 @@ public class $<T> {
         return (E[]) uniq(Arrays.asList(array)).toArray();
     }
 
-    public static <K, E> Collection<E> uniq(final Iterable<E> iterable, final Function1<E, K> func) {
+    public static <K, E> Collection<E> uniq(final Iterable<E> iterable, final Function<E, K> func) {
         final Map<K, E> retVal = newLinkedHashMap();
         for (final E e : iterable) {
             final K key = func.apply(e);
@@ -1178,7 +1181,7 @@ public class $<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, E> E[] uniq(final E[] array, final Function1<E, K> func) {
+    public static <K, E> E[] uniq(final E[] array, final Function<E, K> func) {
         return (E[]) uniq(Arrays.asList(array), func).toArray();
     }
 
@@ -1191,12 +1194,12 @@ public class $<T> {
         return (E[]) uniq(array);
     }
 
-    public static <K, E> Collection<E> distinctBy(final Iterable<E> iterable, final Function1<E, K> func) {
+    public static <K, E> Collection<E> distinctBy(final Iterable<E> iterable, final Function<E, K> func) {
         return uniq(iterable, func);
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, E> E[] distinctBy(final E[] array, final Function1<E, K> func) {
+    public static <K, E> E[] distinctBy(final E[] array, final Function<E, K> func) {
         return (E[]) uniq(array, func);
     }
 
@@ -1328,7 +1331,7 @@ public class $<T> {
     }
 
     public static <K, V> List<Tuple<K, V>> object(final List<K> keys, final List<V> values) {
-        return map(keys, new Function1<K, Tuple<K, V>>() {
+        return map(keys, new Function<K, Tuple<K, V>>() {
             private int index;
 
             @Override
@@ -1340,7 +1343,7 @@ public class $<T> {
 
     public static <E> int findIndex(final List<E> list, final Predicate<E> pred) {
         for (int index = 0; index < list.size(); index++) {
-            if (pred.apply(list.get(index))) {
+            if (pred.test(list.get(index))) {
                 return index;
             }
         }
@@ -1353,7 +1356,7 @@ public class $<T> {
 
     public static <E> int findLastIndex(final List<E> list, final Predicate<E> pred) {
         for (int index = list.size() - 1; index >= 0; index--) {
-            if (pred.apply(list.get(index))) {
+            if (pred.test(list.get(index))) {
                 return index;
             }
         }
@@ -1457,8 +1460,8 @@ public class $<T> {
         return chunk(getIterable(), size);
     }
 
-    public static <T, F> Function1<F, T> bind(final Function1<F, T> function) {
-        return new Function1<F, T>() {
+    public static <T, F> Function<F, T> bind(final Function<F, T> function) {
+        return new Function<F, T>() {
             @Override
             public T apply(F arg) {
                 return function.apply(arg);
@@ -1466,8 +1469,8 @@ public class $<T> {
         };
     }
 
-    public static <T, F> Function1<F, T> memoize(final Function1<F, T> function) {
-        return new MemoizeFunction1<F, T>() {
+    public static <T, F> Function<F, T> memoize(final Function<F, T> function) {
+        return new MemoizeFunction<F, T>() {
             @Override
             public T calc(F arg) {
                 return function.apply(arg);
@@ -1536,9 +1539,9 @@ public class $<T> {
         };
     }
 
-    public static <T> Function1<Void, T> wrap(final Function1<T, T> function,
-        final Function1<Function1<T, T>, T> wrapper) {
-        return new Function1<Void, T>() {
+    public static <T> Function<Void, T> wrap(final Function<T, T> function,
+        final Function<Function<T, T>, T> wrapper) {
+        return new Function<Void, T>() {
             public T apply(final Void arg) {
                 return wrapper.apply(function);
             }
@@ -1547,15 +1550,15 @@ public class $<T> {
 
     public static <E> Predicate<E> negate(final Predicate<E> pred) {
         return new Predicate<E>() {
-            public Boolean apply(final E item) {
-                return !pred.apply(item);
+            public boolean test(final E item) {
+                return !pred.test(item);
             }
         };
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Function1<T, T> compose(final Function1<T, T> ... func) {
-        return new Function1<T, T>() {
+    public static <T> Function<T, T> compose(final Function<T, T> ... func) {
+        return new Function<T, T>() {
             public T apply(final T arg) {
                 T result = arg;
                 for (int index = func.length - 1; index >= 0; index -= 1) {
@@ -1631,8 +1634,8 @@ public class $<T> {
         return object.values();
     }
 
-    public static <K, V> List<Tuple<K, V>> mapObject(final Map<K, V> object, final Function1<? super V, V> func) {
-        return map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+    public static <K, V> List<Tuple<K, V>> mapObject(final Map<K, V> object, final Function<? super V, V> func) {
+        return map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
                 return Tuple.create(entry.getKey(), func.apply(entry.getValue()));
@@ -1641,7 +1644,7 @@ public class $<T> {
     }
 
     public static <K, V> List<Tuple<K, V>> pairs(final Map<K, V> object) {
-        return map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+        return map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
                 return Tuple.create(entry.getKey(), entry.getValue());
@@ -1650,7 +1653,7 @@ public class $<T> {
     }
 
     public static <K, V> List<Tuple<V, K>> invert(final Map<K, V> object) {
-        return map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<V, K>>() {
+        return map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<V, K>>() {
             @Override
             public Tuple<V, K> apply(Map.Entry<K, V> entry) {
                 return Tuple.create(entry.getValue(), entry.getKey());
@@ -1688,7 +1691,7 @@ public class $<T> {
 
     public static <E> E findKey(final List<E> list, final Predicate<E> pred) {
         for (int index = 0; index < list.size(); index++) {
-            if (pred.apply(list.get(index))) {
+            if (pred.test(list.get(index))) {
                 return list.get(index);
             }
         }
@@ -1701,7 +1704,7 @@ public class $<T> {
 
     public static <E> E findLastKey(final List<E> list, final Predicate<E> pred) {
         for (int index = list.size() - 1; index >= 0; index--) {
-            if (pred.apply(list.get(index))) {
+            if (pred.test(list.get(index))) {
                 return list.get(index);
             }
         }
@@ -1714,7 +1717,7 @@ public class $<T> {
 
     @SuppressWarnings("unchecked")
     public static <K, V> List<Tuple<K, V>> pick(final Map<K, V> object, final V ... keys) {
-        return without(map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+        return without(map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
                 if (Arrays.asList(keys).contains(entry.getKey())) {
@@ -1728,10 +1731,10 @@ public class $<T> {
 
     @SuppressWarnings("unchecked")
     public static <K, V> List<Tuple<K, V>> pick(final Map<K, V> object, final Predicate<V> pred) {
-        return without(map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+        return without(map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
-                if (pred.apply(object.get(entry.getKey()))) {
+                if (pred.test(object.get(entry.getKey()))) {
                     return Tuple.create(entry.getKey(), entry.getValue());
                 } else {
                     return null;
@@ -1742,7 +1745,7 @@ public class $<T> {
 
     @SuppressWarnings("unchecked")
     public static <K, V> List<Tuple<K, V>> omit(final Map<K, V> object, final V ... keys) {
-        return without(map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+        return without(map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
                 if (Arrays.asList(keys).contains(entry.getKey())) {
@@ -1756,10 +1759,10 @@ public class $<T> {
 
     @SuppressWarnings("unchecked")
     public static <K, V> List<Tuple<K, V>> omit(final Map<K, V> object, final Predicate<V> pred) {
-        return without(map(newArrayList(object.entrySet()), new Function1<Map.Entry<K, V>, Tuple<K, V>>() {
+        return without(map(newArrayList(object.entrySet()), new Function<Map.Entry<K, V>, Tuple<K, V>>() {
             @Override
             public Tuple<K, V> apply(Map.Entry<K, V> entry) {
-                if (pred.apply(entry.getValue())) {
+                if (pred.test(entry.getValue())) {
                     return null;
                 } else {
                     return Tuple.create(entry.getKey(), entry.getValue());
@@ -1837,7 +1840,7 @@ public class $<T> {
     }
 
     public static boolean isFunction(final Object object) {
-        return object instanceof Function1;
+        return object instanceof Function;
     }
 
     public static boolean isString(final Object object) {
@@ -1884,16 +1887,16 @@ public class $<T> {
         };
     }
 
-    public static <K, V> Function1<Map<K, V>, V> property(final K key) {
-        return new Function1<Map<K, V>, V>() {
+    public static <K, V> Function<Map<K, V>, V> property(final K key) {
+        return new Function<Map<K, V>, V>() {
             public V apply(final Map<K, V> object) {
                 return object.get(key);
             }
         };
     }
 
-    public static <K, V> Function1<K, V> propertyOf(final Map<K, V> object) {
-        return new Function1<K, V>() {
+    public static <K, V> Function<K, V> propertyOf(final Map<K, V> object) {
+        return new Function<K, V>() {
             public V apply(final K key) {
                 return object.get(key);
             }
@@ -1902,7 +1905,7 @@ public class $<T> {
 
     public static <K, V> Predicate<Map<K, V>> matcher(final Map<K, V> object) {
         return new Predicate<Map<K, V>>() {
-            public Boolean apply(final Map<K, V> item) {
+            public boolean test(final Map<K, V> item) {
                 for (final K key : keys(object)) {
                     if (!item.containsKey(key) || !item.get(key).equals(object.get(key))) {
                         return false;
@@ -1943,7 +1946,7 @@ public class $<T> {
 
     public static <E> Object result(final Iterable<E> iterable, final Predicate<E> pred) {
         for (E element : iterable) {
-            if (pred.apply(element)) {
+            if (pred.test(element)) {
                 if (element instanceof Map.Entry) {
                     if (((Map.Entry) element).getValue() instanceof Supplier) {
                         return ((Supplier) ((Map.Entry) element).getValue()).get();
@@ -2108,7 +2111,7 @@ public class $<T> {
             return new Chain($.flatten(list));
         }
 
-        public <F> Chain<F> map(final Function1<? super T, F> func) {
+        public <F> Chain<F> map(final Function<? super T, F> func) {
             return new Chain<F>($.map(list, func));
         }
 
@@ -2153,7 +2156,7 @@ public class $<T> {
             return new Chain<Comparable>($.max((Collection) list));
         }
 
-        public <F extends Comparable<? super F>> Chain<T> max(final Function1<T, F> func) {
+        public <F extends Comparable<? super F>> Chain<T> max(final Function<T, F> func) {
             return new Chain<T>($.max(list, func));
         }
 
@@ -2162,7 +2165,7 @@ public class $<T> {
             return new Chain<Comparable>($.min((Collection) list));
         }
 
-        public <F extends Comparable<? super F>> Chain<T> min(final Function1<T, F> func) {
+        public <F extends Comparable<? super F>> Chain<T> min(final Function<T, F> func) {
             return new Chain<T>($.min(list, func));
         }
 
@@ -2176,7 +2179,7 @@ public class $<T> {
             return new Chain<F>($.sortWith((List<F>) list, comparator));
         }
 
-        public <F extends Comparable<? super F>> Chain<T> sortBy(final Function1<T, F> func) {
+        public <F extends Comparable<? super F>> Chain<T> sortBy(final Function<T, F> func) {
             return new Chain<T>($.sortBy(list, func));
         }
 
@@ -2185,7 +2188,7 @@ public class $<T> {
             return new Chain<Map<K, Comparable>>($.sortBy((List<Map<K, Comparable>>) list, key));
         }
 
-        public <F> Chain<Map<F, List<T>>> groupBy(final Function1<T, F> func) {
+        public <F> Chain<Map<F, List<T>>> groupBy(final Function<T, F> func) {
             return new Chain<Map<F, List<T>>>($.groupBy(list, func));
         }
 
@@ -2193,7 +2196,7 @@ public class $<T> {
             return new Chain<Map<Object, List<T>>>($.indexBy(list, property));
         }
 
-        public <F> Chain<Map<F, Integer>> countBy(final Function1<T, F> func) {
+        public <F> Chain<Map<F, Integer>> countBy(final Function<T, F> func) {
             return new Chain<Map<F, Integer>>($.countBy(list, func));
         }
 
@@ -2261,7 +2264,7 @@ public class $<T> {
         }
 
         @SuppressWarnings("unchecked")
-        public <F> Chain<T> uniq(final Function1<T, F> func) {
+        public <F> Chain<T> uniq(final Function<T, F> func) {
             return new Chain<T>($.newArrayList($.uniq(list, func)));
         }
 
@@ -2270,7 +2273,7 @@ public class $<T> {
         }
 
         @SuppressWarnings("unchecked")
-        public <F> Chain<F> distinctBy(final Function1<T, F> func) {
+        public <F> Chain<F> distinctBy(final Function<T, F> func) {
             return new Chain<F>($.newArrayList((Iterable<F>) $.uniq(list, func)));
         }
 
@@ -2380,7 +2383,7 @@ public class $<T> {
         }
     }
 
-    public static void mixin(final String funcName, final Function1<String, String> func) {
+    public static void mixin(final String funcName, final Function<String, String> func) {
         FUNCTIONS.put(funcName, func);
     }
 

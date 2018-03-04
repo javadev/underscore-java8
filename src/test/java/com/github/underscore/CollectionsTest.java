@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2015 Valentyn Kolesnikov
+ * Copyright 2015-2018 Valentyn Kolesnikov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@ package com.github.underscore;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -177,13 +179,13 @@ _.map([1, 2, 3], function(num){ return num * 3; });
 */
     @Test
     public void map() {
-        List<Integer> result = $.map(asList(1, 2, 3), new Function1<Integer, Integer>() {
+        List<Integer> result = $.map(asList(1, 2, 3), new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return item * 3;
             }
         });
         assertEquals("[3, 6, 9]", result.toString());
-        List<Integer> resultObject = new $<Integer>(asList(1, 2, 3)).map(new Function1<Integer, Integer>() {
+        List<Integer> resultObject = new $<Integer>(asList(1, 2, 3)).map(new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return item * 3;
             }
@@ -197,7 +199,7 @@ _.map(_.range(3), function(num){ return (num + 1) * 3; });
 */
     @Test
     public void mapArray() {
-        List<Integer> result = $.map($.range(3), new Function1<Integer, Integer>() {
+        List<Integer> result = $.map($.range(3), new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return (item + 1) * 3;
             }
@@ -213,7 +215,7 @@ _.map({one: 1, two: 2, three: 3}, function(num, key){ return num * 3; });
     public void mapMap() {
         final Set<Integer> result =
         $.map((new LinkedHashMap<Integer, String>() { { put(1, "one"); put(2, "two"); put(3, "three"); } }).entrySet(),
-            new Function1<Map.Entry<Integer, String>, Integer>() {
+            new Function<Map.Entry<Integer, String>, Integer>() {
             public Integer apply(Map.Entry<Integer, String> item) {
                 return item.getKey() * 3;
             }
@@ -228,13 +230,13 @@ _.collect([1, 2, 3], function(num){ return num * 3; });
     @Test
     @SuppressWarnings("unchecked")
     public void collect() {
-        List<Integer> result = $.collect(asList(1, 2, 3), new Function1<Integer, Integer>() {
+        List<Integer> result = $.collect(asList(1, 2, 3), new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return item * 3;
             }
         });
         assertEquals("[3, 6, 9]", result.toString());
-        Set<Integer> resultSet = $.collect(new LinkedHashSet(asList(1, 2, 3)), new Function1<Integer, Integer>() {
+        Set<Integer> resultSet = $.collect(new LinkedHashSet(asList(1, 2, 3)), new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return item * 3;
             }
@@ -424,21 +426,21 @@ var even = _.find([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
     public void find() {
         final Optional<Integer> result = $.find(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("Optional.of(2)", result.toString());
         final Optional<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6)).find(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
         assertEquals("Optional.of(2)", resultChain.toString());
         final Optional<Integer> resultChain2 = $.chain(asList(1, 2, 3, 4, 5, 6)).find(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item > 6;
             }
         }).item();
@@ -454,28 +456,28 @@ var even = _.findLast([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; })
     public void findLast() {
         final Optional<Integer> result = $.findLast(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("Optional.of(6)", result.toString());
         final Optional<Integer> result2 = $.findLast(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item > 6;
             }
         });
         assertEquals("Optional.absent()", result2.toString());
         final Optional<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6)).findLast(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
         assertEquals("Optional.of(6)", resultChain.toString());
         final Optional<Integer> resultChain2 = $.chain(asList(1, 2, 3, 4, 5, 6)).findLast(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item > 6;
             }
         }).item();
@@ -490,7 +492,7 @@ var even = _.find([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
     public void detect() {
         final Optional<Integer> result = $.detect(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -505,14 +507,14 @@ var evens = _.filter([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
     public void filter() {
         final List<Integer> result = $.filter(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[2, 4, 6]", result.toString());
         final List<Integer> resultObject = new $<Integer>(asList(1, 2, 3, 4, 5, 6))
             .filter(new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -528,21 +530,21 @@ var evens = _.filterFalse([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0
     public void filterFalse() {
         final List<Integer> result = $.filterFalse(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[1, 3, 5]", result.toString());
         final List<Integer> resultObject = new $<Integer>(asList(1, 2, 3, 4, 5, 6))
             .filterFalse(new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[1, 3, 5]", resultObject.toString());
         final Set<Integer> resultSet = $.filterFalse(new LinkedHashSet(asList(1, 2, 3, 4, 5, 6)),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -557,7 +559,7 @@ var evens = _.filterIndexed([1, 2, 3, 4, 5, 6], function(index, num){ return ind
     public void filterIndexed() {
         final List<Integer> result = $.filterIndexed(asList(1, 2, 3, 4, 5, 6),
             new PredicateIndexed<Integer>() {
-            public boolean apply(int index, Integer item) {
+            public boolean test(int index, Integer item) {
                 return index != 1 && item % 2 == 0;
             }
         });
@@ -565,7 +567,7 @@ var evens = _.filterIndexed([1, 2, 3, 4, 5, 6], function(index, num){ return ind
         final List<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6))
             .filterIndexed(
             new PredicateIndexed<Integer>() {
-            public boolean apply(int index, Integer item) {
+            public boolean test(int index, Integer item) {
                 return index != 1 && item % 2 == 0;
             }
         }).value();
@@ -581,14 +583,14 @@ var evens = _.filter([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
     public void select() {
         final List<Integer> result = $.select(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[2, 4, 6]", result.toString());
         final Set<Integer> resultSet = $.select(new LinkedHashSet(asList(1, 2, 3, 4, 5, 6)),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -604,21 +606,21 @@ var evens = _.reject([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
     public void reject() {
         final List<Integer> result = $.reject(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[1, 3, 5]", result.toString());
         final List<Integer> resultObject = new $<Integer>(asList(1, 2, 3, 4, 5, 6))
             .reject(new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         assertEquals("[1, 3, 5]", resultObject.toString());
         final Set<Integer> resultSet = $.reject(new LinkedHashSet(asList(1, 2, 3, 4, 5, 6)),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -633,7 +635,7 @@ var evens = _.rejectIndexed([1, 2, 3, 4, 5, 6], function(index, num){ return ind
     public void rejectIndexed() {
         final List<Integer> result = $.rejectIndexed(asList(1, 2, 3, 4, 5, 6),
             new PredicateIndexed<Integer>() {
-            public boolean apply(int index, Integer item) {
+            public boolean test(int index, Integer item) {
                 return index != 1 && item % 2 == 0;
             }
         });
@@ -641,7 +643,7 @@ var evens = _.rejectIndexed([1, 2, 3, 4, 5, 6], function(index, num){ return ind
         final List<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6))
             .rejectIndexed(
             new PredicateIndexed<Integer>() {
-            public boolean apply(int index, Integer item) {
+            public boolean test(int index, Integer item) {
                 return index != 1 && item % 2 == 0;
             }
         }).value();
@@ -657,41 +659,41 @@ _.every([1, 2, 3, 4], function(num) { return num < 5; }); // true
     public void every() {
         final boolean result1 = $.every(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1obj = new $(asList(1, 2, 3, 4))
             .every(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1chain = $.chain(asList(1, 2, 3, 4))
             .every(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
         final boolean result2 = $.every(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item < 5;
             }
         });
         final boolean result2obj = new $(asList(1, 2, 3, 4))
             .every(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item < 5;
             }
         });
         final boolean result2chain = $.chain(asList(1, 2, 3, 4))
             .every(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item < 5;
             }
         }).item();
@@ -712,27 +714,27 @@ _.all([1, 2, 3, 4], function(num) { return num < 5; }); // true
     public void all() {
         final boolean result1 = $.all(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1obj = new $(asList(1, 2, 3, 4))
             .all(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result2 = $.all(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item < 5;
             }
         });
         final boolean result2obj = new $(asList(1, 2, 3, 4))
             .all(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item < 5;
             }
         });
@@ -751,27 +753,27 @@ _.any([1, 2, 3, 4], function(num) { return num === 5; }); // false
     public void any() {
         final boolean result1 = $.any(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1obj = new $(asList(1, 2, 3, 4))
             .any(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result2 = $.any(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item == 5;
             }
         });
         final boolean result2obj = new $(asList(1, 2, 3, 4))
             .any(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item == 5;
             }
         });
@@ -790,41 +792,41 @@ _.some([1, 2, 3, 4], function(num) { return num === 5; }); // false
     public void some() {
         final boolean result1 = $.some(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1obj = new $(asList(1, 2, 3, 4))
             .some(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
         final boolean result1chain = $.chain(asList(1, 2, 3, 4))
             .some(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
         final boolean result2 = $.some(asList(1, 2, 3, 4),
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item == 5;
             }
         });
         final boolean result2obj = new $(asList(1, 2, 3, 4))
             .some(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item == 5;
             }
         });
         final boolean result2chain = $.chain(asList(1, 2, 3, 4))
             .some(
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item == 5;
             }
         }).item();
@@ -1158,21 +1160,21 @@ _.max(numbers);
         final Integer resultChain = (Integer) $.chain(asList(10, 5, 100, 2, 1000)).max().item();
         assertEquals("1000", resultChain.toString());
         final Integer resultComp = $.max(asList(10, 5, 100, 2, 1000),
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
         });
         assertEquals("2", resultComp.toString());
         final Integer resultCompObj = new $<Integer>(asList(10, 5, 100, 2, 1000)).max(
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
         });
         assertEquals("2", resultCompObj.toString());
         final Integer resultCompChain = (Integer) $.chain(asList(10, 5, 100, 2, 1000)).max(
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
@@ -1188,7 +1190,7 @@ _.max(numbers);
         }
         final Person resultPerson = $.max(
             asList(new Person("moe", 40), new Person("larry", 50), new Person("curly", 60)),
-                new Function1<Person, Integer>() {
+                new Function<Person, Integer>() {
             public Integer apply(Person item) {
                 return item.age;
             }
@@ -1212,21 +1214,21 @@ _.min(numbers);
         final Integer resultChain = (Integer) $.chain(asList(10, 5, 100, 2, 1000)).min().item();
         assertEquals("2", resultChain.toString());
         final Integer resultComp = $.min(asList(10, 5, 100, 2, 1000),
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
         });
         assertEquals("1000", resultComp.toString());
         final Integer resultCompObj = new $<Integer>(asList(10, 5, 100, 2, 1000)).min(
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
         });
         assertEquals("1000", resultCompObj.toString());
         final Integer resultCompChain = (Integer) $.chain(asList(10, 5, 100, 2, 1000)).min(
-                new Function1<Integer, Integer>() {
+                new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return -item;
             }
@@ -1242,7 +1244,7 @@ _.min(numbers);
         }
         final Person resultPerson = $.min(
             asList(new Person("moe", 40), new Person("larry", 50), new Person("curly", 60)),
-                new Function1<Person, Integer>() {
+                new Function<Person, Integer>() {
             public Integer apply(Person item) {
                 return item.age;
             }
@@ -1296,7 +1298,7 @@ _.sortBy([1, 2, 3, 4, 5, 6], function(num){ return Math.sin(num); });
     public void sortBy() {
         final List<Integer> result =
         $.sortBy(asList(1, 2, 3, 4, 5, 6),
-            new Function1<Integer, Integer>() {
+            new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return Double.valueOf(Math.sin(item) * 1000).intValue();
             }
@@ -1304,7 +1306,7 @@ _.sortBy([1, 2, 3, 4, 5, 6], function(num){ return Math.sin(num); });
         assertEquals("[5, 4, 6, 3, 1, 2]", result.toString());
         final List<Integer> resultObj =
         new $(asList(1, 2, 3, 4, 5, 6)).sortBy(
-            new Function1<Integer, Integer>() {
+            new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return Double.valueOf(Math.sin(item) * 1000).intValue();
             }
@@ -1312,7 +1314,7 @@ _.sortBy([1, 2, 3, 4, 5, 6], function(num){ return Math.sin(num); });
         assertEquals("[5, 4, 6, 3, 1, 2]", resultObj.toString());
         final List<Integer> resultChain =
         $.chain(asList(1, 2, 3, 4, 5, 6)).sortBy(
-            new Function1<Integer, Integer>() {
+            new Function<Integer, Integer>() {
             public Integer apply(Integer item) {
                 return Double.valueOf(Math.sin(item) * 1000).intValue();
             }
@@ -1357,7 +1359,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
     public void groupBy() {
         final Map<Double, List<Double>> result =
         $.groupBy(asList(1.3, 2.1, 2.4),
-            new Function1<Double, Double>() {
+            new Function<Double, Double>() {
             public Double apply(Double num) {
                 return Math.floor(num);
             }
@@ -1365,7 +1367,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
         assertEquals("{1.0=[1.3], 2.0=[2.1, 2.4]}", result.toString());
         final Map<Double, List<Double>> resultObj =
         new $(asList(1.3, 2.1, 2.4)).groupBy(
-            new Function1<Double, Double>() {
+            new Function<Double, Double>() {
             public Double apply(Double num) {
                 return Math.floor(num);
             }
@@ -1373,7 +1375,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
         assertEquals("{1.0=[1.3], 2.0=[2.1, 2.4]}", resultObj.toString());
         final Map<Double, List<Double>> resultChain =
         (Map<Double, List<Double>>) $.chain(asList(1.3, 2.1, 2.4)).groupBy(
-            new Function1<Double, Double>() {
+            new Function<Double, Double>() {
             public Double apply(Double num) {
                 return Math.floor(num);
             }
@@ -1440,7 +1442,7 @@ _.countBy(stooges, 'age');
         }
         final Map<String, Integer> result =
         $.countBy(asList(new Person("moe", 40), new Person("moe", 50), new Person("curly", 60)),
-            new Function1<Person, String>() {
+            new Function<Person, String>() {
             public String apply(Person person) {
                 return person.name;
             }
@@ -1448,7 +1450,7 @@ _.countBy(stooges, 'age');
         assertEquals("{moe=2, curly=1}", result.toString());
         final Map<String, Integer> resultObj =
         new $(asList(new Person("moe", 40), new Person("moe", 50), new Person("curly", 60))).countBy(
-            new Function1<Person, String>() {
+            new Function<Person, String>() {
             public String apply(Person person) {
                 return person.name;
             }
@@ -1457,7 +1459,7 @@ _.countBy(stooges, 'age');
         final Map<String, Integer> resultChain =
         (Map<String, Integer>) $.chain(asList(new Person("moe", 40), new Person("moe", 50),
             new Person("curly", 60))).countBy(
-            new Function1<Person, String>() {
+            new Function<Person, String>() {
             public String apply(Person person) {
                 return person.name;
             }
@@ -1572,14 +1574,14 @@ _.partition([0, 1, 2, 3, 4, 5], isOdd);
     @Test
     public void partition() {
         final List<List<Integer>> result = $.partition(asList(0, 1, 2, 3, 4, 5), new Predicate<Integer>() {
-            public Boolean apply(final Integer item) {
+            public boolean test(final Integer item) {
                 return item % 2 == 1;
             }
         });
         assertEquals("[1, 3, 5]", result.get(0).toString());
         assertEquals("[0, 2, 4]", result.get(1).toString());
         final List<Integer>[] resultArray = $.partition(new Integer[] {0, 1, 2, 3, 4, 5}, new Predicate<Integer>() {
-            public Boolean apply(final Integer item) {
+            public boolean test(final Integer item) {
                 return item % 2 == 1;
             }
         });

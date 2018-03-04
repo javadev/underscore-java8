@@ -1,5 +1,6 @@
 package com.github.underscore;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public final class Optional<T> {
@@ -56,7 +57,7 @@ public final class Optional<T> {
         return !absent;
     }
 
-    public <U> Optional<U> map(Function1<? super T, ? extends U> mapper) {
+    public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         $.checkNotNull(mapper);
         if (!isPresent()) {
             return absent();

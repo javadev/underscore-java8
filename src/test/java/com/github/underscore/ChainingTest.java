@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2015 Valentyn Kolesnikov
+ * Copyright 2015-2018 Valentyn Kolesnikov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -62,13 +64,13 @@ var youngest = _.chain(stooges)
         } };
         final String youngest = $.chain(stooges)
             .sortBy(
-                new Function1<Map<String, Object>, Integer>() {
+                new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
                     return (Integer) item.get("age");
                 }
             })
             .map(
-                new Function1<Map<String, Object>, String>() {
+                new Function<Map<String, Object>, String>() {
                 public String apply(Map<String, Object> item) {
                     return item.get("name") + " is " + item.get("age");
                 }
@@ -87,13 +89,13 @@ var youngest = _.chain(stooges)
         } };
         final String youngest = $.chain(stooges)
             .sortBy(
-                new Function1<Map<String, Object>, Integer>() {
+                new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
                     return (Integer) item.get("age");
                 }
             })
             .map(
-                new Function1<Map<String, Object>, String>() {
+                new Function<Map<String, Object>, String>() {
                 public String apply(Map<String, Object> item) {
                     return item.get("name") + " is " + item.get("age");
                 }
@@ -112,13 +114,13 @@ var youngest = _.chain(stooges)
         } };
         final String youngest = new $(stooges).chain()
             .sortBy(
-                new Function1<Map<String, Object>, Integer>() {
+                new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
                     return (Integer) item.get("age");
                 }
             })
             .map(
-                new Function1<Map<String, Object>, String>() {
+                new Function<Map<String, Object>, String>() {
                 public String apply(Map<String, Object> item) {
                     return item.get("name") + " is " + item.get("age");
                 }
@@ -137,13 +139,13 @@ var youngest = _.chain(stooges)
         } };
         final String youngest = $.chain(stooges)
             .sortBy(
-                new Function1<Map<String, Object>, Integer>() {
+                new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
                     return (Integer) item.get("age");
                 }
             })
             .map(
-                new Function1<Map<String, Object>, String>() {
+                new Function<Map<String, Object>, String>() {
                 public String apply(Map<String, Object> item) {
                     return item.get("name") + " is " + item.get("age");
                 }
@@ -186,7 +188,7 @@ _.chain(lyrics)
         } };
         final String result = $.chain(lyrics)
             .map(
-                new Function1<Map<String, Object>, List<String>>() {
+                new Function<Map<String, Object>, List<String>>() {
                 public List<String> apply(Map<String, Object> item) {
                     return asList(String.valueOf(item.get("words")).split(" "));
                 }
@@ -244,7 +246,7 @@ _.chain(lyrics)
         } };
         final String result = $.chain(lyrics)
             .map(
-                new Function1<Map<String, Object>, List<String>>() {
+                new Function<Map<String, Object>, List<String>>() {
                 public List<String> apply(Map<String, Object> item) {
                     return asList(String.valueOf(item.get("words")).split(" "));
                 }
@@ -306,18 +308,18 @@ _.chain(doctors)
         final String result = $.chain(doctors)
             .filter(
                 new Predicate<Map<String, Object>>() {
-                public Boolean apply(Map<String, Object> item) {
+                public boolean test(Map<String, Object> item) {
                     return (Integer) item.get("begin") > 2000;
                 }
             })
             .reject(
                 new Predicate<Map<String, Object>>() {
-                public Boolean apply(Map<String, Object> item) {
+                public boolean test(Map<String, Object> item) {
                     return (Integer) item.get("end") > 2009;
                 }
             })
             .map(
-                new Function1<Map<String, Object>, Map<String, Object>>() {
+                new Function<Map<String, Object>, Map<String, Object>>() {
                 public Map<String, Object> apply(final Map<String, Object> item) {
                     return new LinkedHashMap<String, Object>() { {
                         put("doctorNumber", "#" + item.get("number"));
@@ -372,7 +374,7 @@ _.chain(doctors)
                 }
             }, new ArrayList<String>()).item())
             .reject(new Predicate<String>() {
-                public Boolean apply(final String name) {
+                public boolean test(final String name) {
                     return name.contains("$");
                 }
             })
@@ -397,11 +399,11 @@ var sum = _(words)
         String[] words = new String[] {"Gallinule", "Escambio", "Aciform", "Entortilation", "Extensibility"};
         int sum = $.chain(words)
           .filter(new Predicate<String>() {
-              public Boolean apply(String w) {
+              public boolean test(String w) {
                   return w.startsWith("E");
               }
           })
-          .map(new Function1<String, Integer>() {
+          .map(new Function<String, Integer>() {
               public Integer apply(String w) {
                   return w.length();
               }
@@ -418,17 +420,17 @@ var sum = _(words)
     @SuppressWarnings("unchecked")
     public void chain8() {
         final List<Comparable> result = $.chain($.class.getDeclaredMethods())
-            .map(new Function1<Method, String>() {
+            .map(new Function<Method, String>() {
                 public String apply(final Method method) {
                     return method.getName();
                 }
             })
             .reject(new Predicate<String>() {
-                public Boolean apply(final String name) {
+                public boolean test(final String name) {
                     return name.contains("$");
                 }
             })
-            .uniq(new Function1<String, Character>() {
+            .uniq(new Function<String, Character>() {
                 public Character apply(final String name) {
                     // Contrived example to test that .uniq returns
                     // a Chain<String> rather than a Chain<Character>.
@@ -452,7 +454,7 @@ var sum = _(words)
                 }
             }, new ArrayList<String>()).item())
             .filterFalse(new Predicate<String>() {
-                public Boolean apply(final String name) {
+                public boolean test(final String name) {
                     return name.contains("$");
                 }
             })

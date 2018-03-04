@@ -24,6 +24,8 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.junit.Test;
 import static java.util.Arrays.asList;
@@ -167,7 +169,7 @@ _("fabio").capitalize();
     @Test
     @SuppressWarnings("unchecked")
     public void mixin() {
-        $.mixin("capitalize", new Function1<String, String>() {
+        $.mixin("capitalize", new Function<String, String>() {
             public String apply(final String string) {
                 return String.valueOf(string.charAt(0)).toUpperCase() + string.substring(1).toLowerCase();
             }
@@ -313,22 +315,22 @@ _.result(object, 'stuff');
         } };
 
         assertEquals("crumpets", $.result(object.entrySet(), new Predicate<Map.Entry<String, Object>>() {
-            public Boolean apply(Map.Entry<String, Object> item) {
+            public boolean test(Map.Entry<String, Object> item) {
                 return item.getKey().equals("cheese");
             }
         }));
         assertEquals("nonsense", $.result(object.entrySet(), new Predicate<Map.Entry<String, Object>>() {
-            public Boolean apply(Map.Entry<String, Object> item) {
+            public boolean test(Map.Entry<String, Object> item) {
                 return item.getKey().equals("stuff");
             }
         }));
         assertEquals("result1", $.result(asList("result1", "result2"), new Predicate<String>() {
-            public Boolean apply(String item) {
+            public boolean test(String item) {
                 return item.equals("result1");
             }
         }));
         assertEquals(null, $.result(asList("result1", "result2"), new Predicate<String>() {
-            public Boolean apply(String item) {
+            public boolean test(String item) {
                 return item.equals("result3");
             }
         }));

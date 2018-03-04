@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2015, 2016 Valentyn Kolesnikov
+ * Copyright 2015-2018 Valentyn Kolesnikov
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,10 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
@@ -61,7 +64,7 @@ public class UnderscoreTest {
         assertEquals("[example, some, words]", new $(asList("some", "words", "example")).sort().toString());
         assertEquals("[example, some, words]", $.chain(asList("some", "words", "example")).sort().value().toString());
         assertEquals("[4, 5, 7]", $.chain(asList("some", "words", "example"))
-            .map(new Function1<String, Integer>() {
+            .map(new Function<String, Integer>() {
                 public Integer apply(String arg) {
                     return arg.length();
                 }
@@ -310,7 +313,7 @@ _.elementAtOrNull(arr, 3) // => null
         };
         final Optional<Integer> result = $.findLast(iterable,
             new Predicate<Integer>() {
-            public Boolean apply(Integer item) {
+            public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         });
@@ -383,12 +386,12 @@ _.elementAtOrNull(arr, 3) // => null
         assertEquals("1", Optional.of(1).or(2).toString());
         assertEquals(null, Optional.absent().orNull());
         assertEquals("1", Optional.of(1).orNull().toString());
-        assertFalse(Optional.<Integer>absent().map(new Function1<Integer, String>() {
+        assertFalse(Optional.<Integer>absent().map(new Function<Integer, String>() {
                 public String apply(Integer arg) {
                     return "" + arg;
                 }
             }).isPresent());
-        assertEquals("1", Optional.of(1).map(new Function1<Integer, String>() {
+        assertEquals("1", Optional.of(1).map(new Function<Integer, String>() {
                 public String apply(Integer arg) {
                     return "" + arg;
                 }
@@ -447,7 +450,7 @@ _.elementAtOrNull(arr, 3) // => null
             put("B", 67.4);
             put("C", 67.4);
             put("D", 67.3);
-        } }).entrySet()).sortBy(new Function1<Map.Entry<String, Double>, Double>() {
+        } }).entrySet()).sortBy(new Function<Map.Entry<String, Double>, Double>() {
             public Double apply(Map.Entry<String, Double> item) {
                 return item.getValue();
             }
@@ -465,7 +468,7 @@ _.elementAtOrNull(arr, 3) // => null
             put("d", 2);
             put("e", 3);
             put("f", 5);
-        } }).entrySet()).sortBy(new Function1<Map.Entry<String, Integer>, Integer>() {
+        } }).entrySet()).sortBy(new Function<Map.Entry<String, Integer>, Integer>() {
             public Integer apply(Map.Entry<String, Integer> item) {
                 return -item.getValue();
             }
@@ -480,7 +483,7 @@ _.elementAtOrNull(arr, 3) // => null
             put("A", 34);
             put("B", 25);
             put("C", 50);
-        } }).entrySet()).sortBy(new Function1<Map.Entry<String, Integer>, Integer>() {
+        } }).entrySet()).sortBy(new Function<Map.Entry<String, Integer>, Integer>() {
             public Integer apply(Map.Entry<String, Integer> item) {
                 return -item.getValue();
             }
@@ -536,12 +539,12 @@ _.elementAtOrNull(arr, 3) // => null
         };
         List<Map<String, Object>> result = (List<Map<String, Object>>) $.chain(asList(strings))
             .map(
-                new Function1<String, Map<String, Object>>() {
+                new Function<String, Map<String, Object>>() {
                 public Map<String, Object> apply(String item) {
                     Map<String, Object> resultItem = new LinkedHashMap<String, Object>();
                     resultItem.put("string", item);
                     resultItem.put("longestWord", $.chain(asList(item.split("\\s+"))).map(
-                        new Function1<String, Integer>() {
+                        new Function<String, Integer>() {
                             public Integer apply(String item) {
                                 return item.length();
                             }
@@ -550,7 +553,7 @@ _.elementAtOrNull(arr, 3) // => null
                     return resultItem;
                 }
             })
-            .sortBy(new Function1<Map<String, Object>, Integer>() {
+            .sortBy(new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
                     return -((Integer) item.get("longestWord"));
                 }

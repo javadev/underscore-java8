@@ -6,7 +6,7 @@ jdk:
   - oraclejdk9
 
 script:
-  - mvn clean install jacoco:report coveralls:report
+  - mvn clean install jacoco:report
 
 addons:
    hosts:

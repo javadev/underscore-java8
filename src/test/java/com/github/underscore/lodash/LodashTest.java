@@ -23,10 +23,10 @@
  */
 package com.github.underscore.lodash;
 
-import com.github.underscore.FunctionAccum;
 import com.github.underscore.PredicateIndexed;
 import com.github.underscore.Tuple;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -613,9 +613,9 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
             public boolean test(int index, String str) { return true; } });
         $.chain(new String[] {""}).filterFalse(new Predicate<String>() {
             public boolean test(String str) { return true; } });
-        $.chain(new String[] {""}).reduce(new FunctionAccum<String, String>() {
+        $.chain(new String[] {""}).reduce(new BiFunction<String, String, String>() {
             public String apply(String accum, String str) { return null; } }, "");
-        $.chain(new String[] {""}).reduceRight(new FunctionAccum<String, String>() {
+        $.chain(new String[] {""}).reduceRight(new BiFunction<String, String, String>() {
             public String apply(String accum, String str) { return null; } }, "");
         $.chain(new String[] {""}).find(new Predicate<String>() {
             public boolean test(String str) { return true; } });

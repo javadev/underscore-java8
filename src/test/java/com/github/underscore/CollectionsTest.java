@@ -24,6 +24,7 @@
 package com.github.underscore;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -252,7 +253,7 @@ var sum = _.reduce([1, 2, 3], function(memo, num){ return memo + num; }, 0);
     public void reduce() {
         final Integer result =
         $.reduce(asList(1, 2, 3),
-            new FunctionAccum<Integer, Integer>() {
+            new BiFunction<Integer, Integer, Integer>() {
             public Integer apply(Integer item1, Integer item2) {
                 return item1 + item2;
             }
@@ -269,7 +270,7 @@ var sum = _.reduce([1, 2, 3], function(memo, num){ return memo + num; }, 0);
     public void reduceIntArray() {
         final Integer result =
         $.reduce(new int[]{1, 2, 3},
-            new FunctionAccum<Integer, Integer>() {
+            new BiFunction<Integer, Integer, Integer>() {
             public Integer apply(Integer item1, Integer item2) {
                 return item1 + item2;
             }
@@ -286,7 +287,7 @@ var sum = _.reduce([1, 2, 3], function(memo, num){ return memo + num; }, 0);
     public void reduceArray() {
         final Integer result =
         $.reduce(new Integer[]{1, 2, 3},
-            new FunctionAccum<Integer, Integer>() {
+            new BiFunction<Integer, Integer, Integer>() {
             public Integer apply(Integer item1, Integer item2) {
                 return item1 + item2;
             }
@@ -305,7 +306,7 @@ var flat = _.inject(list, function(a, b) { return a.concat(b); }, []);
     public void inject() {
         final List<Integer> result =
         $.inject(asList(asList(0, 1), asList(2, 3), asList(4, 5)),
-            new FunctionAccum<List<Integer>, List<Integer>>() {
+            new BiFunction<List<Integer>, List<Integer>, List<Integer>>() {
             public List<Integer> apply(List<Integer> item1, List<Integer> item2) {
                 List<Integer> list = new ArrayList<Integer>(item1);
                 list.addAll(item2);
@@ -327,7 +328,7 @@ var flat = _.foldl(list, function(a, b) { return a.concat(b); }, []);
     public void foldl() {
         final List<Integer> result =
         $.foldl(asList(asList(0, 1), asList(2, 3), asList(4, 5)),
-            new FunctionAccum<List<Integer>, List<Integer>>() {
+            new BiFunction<List<Integer>, List<Integer>, List<Integer>>() {
             public List<Integer> apply(List<Integer> item1, List<Integer> item2) {
                 List<Integer> list = new ArrayList<Integer>(item1);
                 list.addAll(item2);
@@ -349,7 +350,7 @@ var flat = _.reduceRight(list, function(a, b) { return a.concat(b); }, []);
     public void reduceRight() {
         final List<Integer> result =
         $.reduceRight(asList(asList(0, 1), asList(2, 3), asList(4, 5)),
-            new FunctionAccum<List<Integer>, List<Integer>>() {
+            new BiFunction<List<Integer>, List<Integer>, List<Integer>>() {
             public List<Integer> apply(List<Integer> item1, List<Integer> item2) {
                 List<Integer> list = new ArrayList<Integer>(item1);
                 list.addAll(item2);
@@ -369,7 +370,7 @@ var sum = _.reduceRight([1, 2, 3], function(memo, num){ return memo + num; }, 0)
     public void reduceRightIntArray() {
         final Integer result =
         $.reduceRight(new int[]{1, 2, 3},
-            new FunctionAccum<Integer, Integer>() {
+            new BiFunction<Integer, Integer, Integer>() {
             public Integer apply(Integer item1, Integer item2) {
                 return item1 + item2;
             }
@@ -386,7 +387,7 @@ var sum = _.reduceRight([1, 2, 3], function(memo, num){ return memo + num; }, 0)
     public void reduceRightArray() {
         final Integer result =
         $.reduceRight(new Integer[]{1, 2, 3},
-            new FunctionAccum<Integer, Integer>() {
+            new BiFunction<Integer, Integer, Integer>() {
             public Integer apply(Integer item1, Integer item2) {
                 return item1 + item2;
             }
@@ -405,7 +406,7 @@ var flat = _.foldr(list, function(a, b) { return a.concat(b); }, []);
     public void foldr() {
         final List<Integer> result =
         $.foldr(asList(asList(0, 1), asList(2, 3), asList(4, 5)),
-            new FunctionAccum<List<Integer>, List<Integer>>() {
+            new BiFunction<List<Integer>, List<Integer>, List<Integer>>() {
             public List<Integer> apply(List<Integer> item1, List<Integer> item2) {
                 List<Integer> list = new ArrayList<Integer>(item1);
                 list.addAll(item2);

@@ -26,11 +26,11 @@ package com.github.underscore.lodash;
 import com.github.underscore.PredicateIndexed;
 import com.github.underscore.Tuple;
 import java.util.*;
+import org.junit.Test;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -603,6 +603,8 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
         $.chain(new String[] {""}).flatten();
         $.chain(new Integer[] {0}).map(new Function<Integer, Integer>() {
             public Integer apply(Integer value) { return value; } });
+        $.chain(new Integer[] {0}).mapIndexed(new BiFunction<Integer, Integer, Integer>() {
+            public Integer apply(Integer index, Integer value) { return value; } });
         $.chain(new String[] {""}).filter(new Predicate<String>() {
             public boolean test(String str) { return true; } });
         $.chain(new String[] {""}).filterIndexed(new PredicateIndexed<String>() {

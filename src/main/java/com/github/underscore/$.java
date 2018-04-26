@@ -26,6 +26,7 @@ package com.github.underscore;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -34,7 +35,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * Underscore-java is a java port of Underscore.js.
+ * Underscore-java8 is a java 8 port of Underscore.js.
  *
  * @author Valentyn Kolesnikov
  */
@@ -229,6 +230,14 @@ public class $<T> {
         }
     }
 
+    public static <T> void eachIndexed(final Iterable<T> iterable, final BiConsumer<Integer, ? super T> func) {
+        int index = 0;
+        for (T element : iterable) {
+            func.accept(index, element);
+            index += 1;
+        }
+    }
+
     public void each(final Consumer<? super T> func) {
         each(iterable, func);
     }
@@ -245,8 +254,16 @@ public class $<T> {
         each(iterable, func);
     }
 
+    public static <T> void forEachIndexed(final Iterable<T> iterable, final BiConsumer<Integer, ? super T> func) {
+        eachIndexed(iterable, func);
+    }
+
     public void forEach(final Consumer<? super T> func) {
         each(iterable, func);
+    }
+
+    public void forEachIndexed(final BiConsumer<Integer, ? super T> func) {
+        eachIndexed(iterable, func);
     }
 
     public static <T> void forEachRight(final Iterable<T> iterable, final Consumer<? super T> func) {
@@ -283,6 +300,20 @@ public class $<T> {
             transformed.add(func.apply(element));
         }
         return transformed;
+    }
+
+    public static <T, E> List<T> mapIndexed(final List<E> list, final BiFunction<Integer, ? super E, T> func) {
+        final List<T> transformed = newArrayListWithExpectedSize(list.size());
+        int index = 0;
+        for (E element : list) {
+            transformed.add(func.apply(index, element));
+            index += 1;
+        }
+        return transformed;
+    }
+
+    public <F> List<F> mapIndexed(final BiFunction<Integer, ? super T, F> func) {
+        return mapIndexed(newArrayList(iterable), func);
     }
 
     public static <T, E> List<T> collect(final List<E> list, final Function<? super E, T> func) {
@@ -2116,6 +2147,10 @@ public class $<T> {
             return new Chain<F>($.map(list, func));
         }
 
+        public <F> Chain<F> mapIndexed(final BiFunction<Integer, ? super T, F> func) {
+            return new Chain<F>($.mapIndexed(list, func));
+        }
+
         public Chain<T> filter(final Predicate<T> pred) {
             return new Chain<T>($.filter(list, pred));
         }
@@ -2403,6 +2438,7 @@ public class $<T> {
         return localList;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Comparable<T>> T[] sort(final T ... array) {
         final T[] localArray = array.clone();
         Arrays.sort(localArray);
@@ -2602,7 +2638,14 @@ public class $<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> T[] reverse(final T ... array) {
-        return (T[]) reverse(Arrays.asList(array)).toArray();
+        T temp;
+        final T[] newArray = array.clone();
+        for (int index = 0; index < array.length / 2; index += 1) {
+            temp = newArray[index];
+            newArray[index] = newArray[array.length - 1 - index];
+            newArray[array.length - 1 - index] = temp;
+        }
+        return newArray;
     }
 
     public static List<Integer> reverse(final int[] array) {

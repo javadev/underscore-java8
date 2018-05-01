@@ -59,11 +59,10 @@ public final class Optional<T> {
 
     public <U> Optional<? extends U> map(Function<? super T, ? extends U> mapper) {
         $.checkNotNull(mapper);
-        if (!isPresent()) {
-            return absent();
-        } else {
+        if (isPresent()) {
             return Optional.fromNullable(mapper.apply(arg));
         }
+        return absent();
     }
 
     public <X extends Throwable> T orThrow(Supplier<? extends X> exceptionFunction) throws X {

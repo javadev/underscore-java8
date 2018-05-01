@@ -54,7 +54,8 @@ public class $<T> {
     private static final java.util.concurrent.atomic.AtomicInteger UNIQUE_ID =
         new java.util.concurrent.atomic.AtomicInteger(0);
     private static final String ALL_SYMBOLS = "([\\s\\S]+?)";
-    private static final java.util.regex.Pattern FORMAT_PATTERN = java.util.regex.Pattern.compile("\\{\\s*(\\d*)\\s*\\}");
+    private static final java.util.regex.Pattern FORMAT_PATTERN =
+        java.util.regex.Pattern.compile("\\{\\s*(\\d*)\\s*\\}");
     private final Iterable<T> iterable;
     private final Optional<String> string;
 

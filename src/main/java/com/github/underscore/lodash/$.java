@@ -2834,7 +2834,7 @@ public class $<T> extends com.github.underscore.$<T> {
     public static class LRUCache<K, V> {
         private static final boolean SORT_BY_ACCESS = true;
         private static final float LOAD_FACTOR = 0.75F;
-        private final LinkedHashMap<K, V> lruCacheMap;
+        private final Map<K, V> lruCacheMap;
         private final int capacity;
 
         public LRUCache(int capacity) {

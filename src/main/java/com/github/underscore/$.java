@@ -26,6 +26,7 @@ package com.github.underscore;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -333,6 +334,20 @@ public class $<T> {
         return accum;
     }
 
+    public static <T> Optional<T> reduce(final Iterable<T> iterable, final BinaryOperator<T> func) {
+        boolean foundAny = false;
+        T accum = null;
+        for (T element : iterable) {
+            if (!foundAny) {
+                foundAny = true;
+                accum = element;
+            } else {
+                accum = func.apply(accum, element);
+            }
+        }
+        return foundAny ? Optional.of(accum) : Optional.<T>absent();
+    }
+
     public static <E> E reduce(final int[] array, final BiFunction<E, ? super Integer, E> func, final E zeroElem) {
         E accum = zeroElem;
         for (int element : array) {
@@ -359,6 +374,10 @@ public class $<T> {
 
     public static <T, E> E reduceRight(final Iterable<T> iterable, final BiFunction<E, T, E> func, final E zeroElem) {
         return reduce(reverse(iterable), func, zeroElem);
+    }
+
+    public static <T> Optional<T> reduceRight(final Iterable<T> iterable, final BinaryOperator<T> func) {
+        return reduce(reverse(iterable), func);
     }
 
     public static <E> E reduceRight(final int[] array, final BiFunction<E, ? super Integer, E> func, final E zeroElem) {
@@ -2176,8 +2195,16 @@ public class $<T> {
             return new Chain<F>($.reduce(list, func, zeroElem));
         }
 
+        public Chain<Optional<T>> reduce(final BinaryOperator<T> func) {
+            return new Chain<Optional<T>>($.reduce(list, func));
+        }
+
         public <F> Chain<F> reduceRight(final BiFunction<F, T, F> func, final F zeroElem) {
             return new Chain<F>($.reduceRight(list, func, zeroElem));
+        }
+
+        public Chain<Optional<T>> reduceRight(final BinaryOperator<T> func) {
+            return new Chain<Optional<T>>($.reduceRight(list, func));
         }
 
         public Chain<Optional<T>> find(final Predicate<T> pred) {
@@ -2790,6 +2817,16 @@ public class $<T> {
         return reference;
     }
 
+    public static <T> List<T> checkNotNullElements(List<T> references) {
+        if (references == null) {
+            throw new NullPointerException();
+        }
+        for (T reference : references) {
+            checkNotNull(reference);
+        }
+        return references;
+    }
+
     public static <T> T checkNotNull(T reference, Object errorMessage) {
         if (reference == null) {
             throw new NullPointerException(String.valueOf(errorMessage));
@@ -2858,6 +2895,56 @@ public class $<T> {
 
     protected static <K, E> Map<K, E> newLinkedHashMap() {
         return new LinkedHashMap<K, E>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Predicate<T> and(
+            final Predicate<? super T> pred1,
+            final Predicate<? super T> pred2,
+        final Predicate<? super T>... rest) {
+        checkNotNull(pred1);
+        checkNotNull(pred2);
+        checkNotNullElements(Arrays.asList(rest));
+        return new Predicate<T>() {
+            @Override
+            public boolean test(T value) {
+                boolean result = pred1.test(value) && pred2.test(value);
+                if (!result) {
+                    return false;
+                }
+                for (Predicate<? super T> predicate : rest) {
+                    if (!predicate.test(value)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Predicate<T> or(
+            final Predicate<? super T> pred1,
+            final Predicate<? super T> pred2,
+            final Predicate<? super T>... rest) {
+        checkNotNull(pred1);
+        checkNotNull(pred2);
+        checkNotNullElements(Arrays.asList(rest));
+        return new Predicate<T>() {
+            @Override
+            public boolean test(T value) {
+                boolean result = pred1.test(value) || pred2.test(value);
+                if (result) {
+                    return true;
+                }
+                for (Predicate<? super T> predicate : rest) {
+                    if (predicate.test(value)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
     }
 
     public static void main(String ... args) {

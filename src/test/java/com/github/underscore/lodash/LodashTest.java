@@ -27,6 +27,7 @@ import com.github.underscore.PredicateIndexed;
 import com.github.underscore.Tuple;
 import java.util.*;
 import org.junit.Test;
+import java.util.function.BinaryOperator;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -617,8 +618,12 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
             public boolean test(String str) { return true; } });
         $.chain(new String[] {""}).reduce(new BiFunction<String, String, String>() {
             public String apply(String accum, String str) { return null; } }, "");
+        $.chain(new String[] {""}).reduce(new BinaryOperator<String>() {
+            public String apply(String accum, String str) { return null; } });
         $.chain(new String[] {""}).reduceRight(new BiFunction<String, String, String>() {
             public String apply(String accum, String str) { return null; } }, "");
+        $.chain(new String[] {""}).reduceRight(new BinaryOperator<String>() {
+            public String apply(String accum, String str) { return null; } });
         $.chain(new String[] {""}).find(new Predicate<String>() {
             public boolean test(String str) { return true; } });
         $.chain(new String[] {""}).findLast(new Predicate<String>() {

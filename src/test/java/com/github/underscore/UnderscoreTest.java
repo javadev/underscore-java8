@@ -436,14 +436,14 @@ _.elementAtOrNull(arr, 3) // => null
         $.checkNotNull(null, "Error message");
     }
 
-    @Test
-    public void checkNotNullWithObjectAndMessage() {
-        assertEquals("123", $.checkNotNull("123", "Error message"));
-    }
-
     @Test(expected = NullPointerException.class)
     public void checkNotNull2() {
         $.checkNotNullElements(null);
+    }
+
+    @Test
+    public void checkNotNullWithObjectAndMessage() {
+        assertEquals("123", $.checkNotNull("123", "Error message"));
     }
 
     @Test

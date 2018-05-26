@@ -28,6 +28,7 @@ import com.github.underscore.PredicateIndexed;
 import com.github.underscore.Tuple;
 import com.github.underscore.Optional;
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -189,8 +190,16 @@ public class $<T> extends com.github.underscore.$<T> {
             return new Chain<F>($.reduce(value(), func, zeroElem));
         }
 
+        public Chain<Optional<T>> reduce(final BinaryOperator<T> func) {
+            return new Chain<Optional<T>>($.reduce(value(), func));
+        }
+
         public <F> Chain<F> reduceRight(final BiFunction<F, T, F> func, final F zeroElem) {
             return new Chain<F>($.reduceRight(value(), func, zeroElem));
+        }
+
+        public Chain<Optional<T>> reduceRight(final BinaryOperator<T> func) {
+            return new Chain<Optional<T>>($.reduceRight(value(), func));
         }
 
         public Chain<Optional<T>> find(final Predicate<T> pred) {

@@ -815,23 +815,11 @@ public class $<T> {
 
     public static <K, E> Map<K, Optional<E>> groupBy(final Iterable<E> iterable, final Function<E, K> func,
         final BinaryOperator<E> binaryOperator) {
-        final Map<K, List<E>> retVal = newLinkedHashMap();
-        for (E e : iterable) {
-            final K key = func.apply(e);
-            List<E> val;
-            if (retVal.containsKey(key)) {
-                val = retVal.get(key);
-            } else {
-                val = newArrayList();
-            }
-            val.add(e);
-            retVal.put(key, val);
+        final Map<K, Optional<E>> retVal = newLinkedHashMap();
+        for (Map.Entry<K, List<E>> entry : groupBy(iterable, func).entrySet()) {
+            retVal.put(entry.getKey(), reduce(entry.getValue(), binaryOperator));
         }
-        final Map<K, Optional<E>> retVal2 = newLinkedHashMap();
-        for (Map.Entry<K, List<E>> entry : retVal.entrySet()) {
-            retVal2.put(entry.getKey(), reduce(entry.getValue(), binaryOperator));
-        }
-        return retVal2;
+        return retVal;
     }
 
     @SuppressWarnings("unchecked")
@@ -2280,6 +2268,11 @@ public class $<T> {
 
         public <F> Chain<Map<F, List<T>>> groupBy(final Function<T, F> func) {
             return new Chain<Map<F, List<T>>>($.groupBy(list, func));
+        }
+
+        public <F> Chain<Map<F, Optional<T>>> groupBy(final Function<T, F> func,
+            final BinaryOperator<T> binaryOperator) {
+            return new Chain<Map<F, Optional<T>>>($.groupBy(list, func, binaryOperator));
         }
 
         public Chain<Map<Object, List<T>>> indexBy(final String property) {

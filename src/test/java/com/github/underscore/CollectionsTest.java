@@ -538,21 +538,21 @@ var even = _.find([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
                 return item % 2 == 0;
             }
         });
-        assertEquals("Optional.of(2)", result.toString());
+        assertEquals("Optional[2]", result.toString());
         final Optional<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6)).find(
             new Predicate<Integer>() {
             public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
-        assertEquals("Optional.of(2)", resultChain.toString());
+        assertEquals("Optional[2]", resultChain.toString());
         final Optional<Integer> resultChain2 = $.chain(asList(1, 2, 3, 4, 5, 6)).find(
             new Predicate<Integer>() {
             public boolean test(Integer item) {
                 return item > 6;
             }
         }).item();
-        assertEquals("Optional.absent()", resultChain2.toString());
+        assertEquals("Optional.empty", resultChain2.toString());
     }
 
 /*
@@ -568,28 +568,28 @@ var even = _.findLast([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; })
                 return item % 2 == 0;
             }
         });
-        assertEquals("Optional.of(6)", result.toString());
+        assertEquals("Optional[6]", result.toString());
         final Optional<Integer> result2 = $.findLast(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
             public boolean test(Integer item) {
                 return item > 6;
             }
         });
-        assertEquals("Optional.absent()", result2.toString());
+        assertEquals("Optional.empty", result2.toString());
         final Optional<Integer> resultChain = $.chain(asList(1, 2, 3, 4, 5, 6)).findLast(
             new Predicate<Integer>() {
             public boolean test(Integer item) {
                 return item % 2 == 0;
             }
         }).item();
-        assertEquals("Optional.of(6)", resultChain.toString());
+        assertEquals("Optional[6]", resultChain.toString());
         final Optional<Integer> resultChain2 = $.chain(asList(1, 2, 3, 4, 5, 6)).findLast(
             new Predicate<Integer>() {
             public boolean test(Integer item) {
                 return item > 6;
             }
         }).item();
-        assertEquals("Optional.absent()", resultChain2.toString());
+        assertEquals("Optional.empty", resultChain2.toString());
     }
 
 /*
@@ -604,7 +604,7 @@ var even = _.find([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
                 return item % 2 == 0;
             }
         });
-        assertEquals("Optional.of(2)", result.toString());
+        assertEquals("Optional[2]", result.toString());
     }
 
 /*
@@ -1511,7 +1511,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
             }
             }
         );
-        assertEquals("{1.0=Optional.of(1.3), 2.0=Optional.of(4.5)}", result.toString());
+        assertEquals("{1.0=Optional[1.3], 2.0=Optional[4.5]}", result.toString());
         final Map<Double, Optional<Double>> resultObj =
         new $(asList(1.3, 2.1, 2.4)).groupBy(
             new Function<Double, Double>() {
@@ -1524,7 +1524,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
                 return a + b;
             }
             });
-        assertEquals("{1.0=Optional.of(1.3), 2.0=Optional.of(4.5)}", resultObj.toString());
+        assertEquals("{1.0=Optional[1.3], 2.0=Optional[4.5]}", resultObj.toString());
         final Map<Double, Optional<Double>> resultChain =
         $.chain(asList(1.3, 2.1, 2.4)).groupBy(
             new Function<Double, Double>() {
@@ -1537,7 +1537,7 @@ _.groupBy([1.3, 2.1, 2.4], function(num){ return Math.floor(num); });
                 return a + b;
             }
             }).item();
-        assertEquals("{1.0=Optional.of(1.3), 2.0=Optional.of(4.5)}", resultChain.toString());
+        assertEquals("{1.0=Optional[1.3], 2.0=Optional[4.5]}", resultChain.toString());
     }
 
 /*

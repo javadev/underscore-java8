@@ -317,7 +317,7 @@ _.elementAtOrNull(arr, 3) // => null
                 return item % 2 == 0;
             }
         });
-        assertEquals("Optional.of(6)", result.toString());
+        assertEquals("Optional[6]", result.toString());
     }
 
     @Test
@@ -378,10 +378,10 @@ _.elementAtOrNull(arr, 3) // => null
         assertFalse(Optional.of(1).equals("test"));
         assertEquals(1, Optional.absent().hashCode());
         assertEquals(Optional.of("123").hashCode(), Optional.of("123").hashCode());
-        assertEquals("Optional.absent()", Optional.absent().toString());
-        assertEquals("Optional.of(1)", Optional.of(1).toString());
-        assertEquals("Optional.absent()", Optional.fromNullable(null).toString());
-        assertEquals("Optional.of(1)", Optional.fromNullable(1).toString());
+        assertEquals("Optional.empty", Optional.absent().toString());
+        assertEquals("Optional[1]", Optional.of(1).toString());
+        assertEquals("Optional.empty", Optional.fromNullable(null).toString());
+        assertEquals("Optional[1]", Optional.fromNullable(1).toString());
         assertEquals("1", Optional.absent().or(1).toString());
         assertEquals("1", Optional.of(1).or(2).toString());
         assertEquals(null, Optional.absent().orNull());

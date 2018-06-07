@@ -96,6 +96,6 @@ public final class Optional<T> {
 
     @Override
     public String toString() {
-        return absent ? "Optional.absent()" : "Optional.of(" + arg + ")";
+        return absent ? "Optional.empty" : "Optional[" + arg + "]";
     }
 }

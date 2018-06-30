@@ -63,7 +63,7 @@ var youngest = _.chain(stooges)
             add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
             add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
         } };
-        final String youngest = $.chain(stooges)
+        final String youngest = U.chain(stooges)
             .sortBy(
                 new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
@@ -88,7 +88,7 @@ var youngest = _.chain(stooges)
             add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
             add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
         } };
-        final String youngest = $.chain(stooges)
+        final String youngest = U.chain(stooges)
             .sortBy(
                 new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
@@ -113,7 +113,7 @@ var youngest = _.chain(stooges)
             add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
             add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
         } };
-        final String youngest = new $(stooges).chain()
+        final String youngest = new U(stooges).chain()
             .sortBy(
                 new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
@@ -138,7 +138,7 @@ var youngest = _.chain(stooges)
             add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
             add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
         } };
-        final String youngest = $.chain(stooges)
+        final String youngest = U.chain(stooges)
             .sortBy(
                 new Function<Map<String, Object>, Integer>() {
                 public Integer apply(Map<String, Object> item) {
@@ -187,7 +187,7 @@ _.chain(lyrics)
             add(new LinkedHashMap<String, Object>() { {
                 put("line", 4); put("words", "He sleeps all night and he works all day"); } });
         } };
-        final String result = $.chain(lyrics)
+        final String result = U.chain(lyrics)
             .map(
                 new Function<Map<String, Object>, List<String>>() {
                 public List<String> apply(Map<String, Object> item) {
@@ -245,7 +245,7 @@ _.chain(lyrics)
             add(new LinkedHashMap<String, Object>() { {
                 put("line", 4); put("words", "He sleeps all night and he works all day"); } });
         } };
-        final String result = $.chain(lyrics)
+        final String result = U.chain(lyrics)
             .map(
                 new Function<Map<String, Object>, List<String>>() {
                 public List<String> apply(Map<String, Object> item) {
@@ -306,7 +306,7 @@ _.chain(doctors)
             add(new LinkedHashMap<String, Object>() { {
                 put("number", 10); put("actor", "David Tennant"); put("begin", 2005); put("end", 2010); } });
         } };
-        final String result = $.chain(doctors)
+        final String result = U.chain(doctors)
             .filter(
                 new Predicate<Map<String, Object>>() {
                 public boolean test(Map<String, Object> item) {
@@ -357,7 +357,7 @@ _.chain(doctors)
             add(new LinkedHashMap<String, Object>() { {
                 put("number", 10); put("actor", "David Tennant"); put("begin", 2005); put("end", 2010); } });
         } };
-        final String result = $.chain(doctors)
+        final String result = U.chain(doctors)
             .skip(1)
             .limit(1)
             .value().toString();
@@ -367,7 +367,7 @@ _.chain(doctors)
     @Test
     @SuppressWarnings("unchecked")
     public void chain6() {
-        final List<Comparable> result = $.chain($.chain($.class.getDeclaredMethods())
+        final List<Comparable> result = U.chain(U.chain(U.class.getDeclaredMethods())
             .reduce(new BiFunction<List<String>, Method, List<String>>() {
                 public List<String> apply(final List<String> accum, final Method method) {
                     accum.add(method.getName());
@@ -398,7 +398,7 @@ var sum = _(words)
     @SuppressWarnings("unchecked")
     public void chain7() {
         String[] words = new String[] {"Gallinule", "Escambio", "Aciform", "Entortilation", "Extensibility"};
-        int sum = $.chain(words)
+        int sum = U.chain(words)
           .filter(new Predicate<String>() {
               public boolean test(String w) {
                   return w.startsWith("E");
@@ -420,7 +420,7 @@ var sum = _(words)
     @Test
     @SuppressWarnings("unchecked")
     public void chain8() {
-        final List<Comparable> result = $.chain($.class.getDeclaredMethods())
+        final List<Comparable> result = U.chain(U.class.getDeclaredMethods())
             .map(new Function<Method, String>() {
                 public String apply(final Method method) {
                     return method.getName();
@@ -447,7 +447,7 @@ var sum = _(words)
     @Test
     @SuppressWarnings("unchecked")
     public void chain9() {
-        final List<Comparable> result = $.chain($.chain($.class.getDeclaredMethods())
+        final List<Comparable> result = U.chain(U.chain(U.class.getDeclaredMethods())
             .reduce(new BiFunction<List<String>, Method, List<String>>() {
                 public List<String> apply(final List<String> accum, final Method method) {
                     accum.add(method.getName());
@@ -468,7 +468,7 @@ var sum = _(words)
 
     @Test
     public void chainToMap() {
-        assertEquals("{name1=one, name2=two}", $.chain((new LinkedHashMap<String, String>() { {
+        assertEquals("{name1=one, name2=two}", U.chain((new LinkedHashMap<String, String>() { {
             put("name1", "one");
             put("name2", "two");
         } }).entrySet()).toMap().item().toString());
@@ -476,7 +476,7 @@ var sum = _(words)
 
     @Test
     public void chainRange() {
-        assertEquals("[0, 1, 2]", $.chain($.range(3)).value().toString());
+        assertEquals("[0, 1, 2]", U.chain(U.range(3)).value().toString());
     }
 
 }

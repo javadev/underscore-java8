@@ -57,7 +57,7 @@ func();
                 return greeting + ": " + this.name;
             }
         }
-        assertEquals("hi: moe", $.bind(new GreetingFunction("moe")).apply("hi"));
+        assertEquals("hi: moe", U.bind(new GreetingFunction("moe")).apply("hi"));
     }
 
 /*
@@ -94,7 +94,7 @@ var fibonacci = _.memoize(function(n) {
             }
         }
         assertEquals(55, new FibonacciFuncion1().apply(10).intValue());
-        Function<Integer, Integer> memoizeFunction = $.memoize(
+        Function<Integer, Integer> memoizeFunction = U.memoize(
             new Function<Integer, Integer>() {
                 public Integer apply(final Integer n) {
                     return n < 2 ? n : apply(n - 1) + apply(n - 2);
@@ -117,11 +117,11 @@ _.delay(function(){ equal(counter, 1, 'incr was throttled'); }, 96);
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        Supplier<Void> throttleIncr = $.throttle(incr, 50);
+        Supplier<Void> throttleIncr = U.throttle(incr, 50);
         throttleIncr.get();
         throttleIncr.get();
-        $.delay(throttleIncr, 16);
-        $.delay(new Supplier<Void>() {
+        U.delay(throttleIncr, 16);
+        U.delay(new Supplier<Void>() {
             public Void get() {
                 assertEquals("incr was throttled", 1, counter[0].intValue());
                 return null;
@@ -145,11 +145,11 @@ _.delay(function(){ equal(counter, 1, 'incr was debounced'); }, 96);
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        Supplier<Void> debouncedIncr = $.debounce(incr, 50);
+        Supplier<Void> debouncedIncr = U.debounce(incr, 50);
         debouncedIncr.get();
         debouncedIncr.get();
-        $.delay(debouncedIncr, 16);
-        $.delay(new Supplier<Void>() {
+        U.delay(debouncedIncr, 16);
+        U.delay(new Supplier<Void>() {
             public Void get() {
                 assertEquals("incr was debounced", 1, counter[0].intValue());
                 return null;
@@ -165,7 +165,7 @@ _.defer(function(){ alert('deferred'); });
     @Test
     public void defer() throws Exception {
         final Integer[] counter = new Integer[] {0};
-        $.defer(new Supplier<Void>() { public Void get() {
+        U.defer(new Supplier<Void>() { public Void get() {
             try {
                 Thread.sleep(16);
             } catch (Exception e) {
@@ -188,7 +188,7 @@ initialize();
         final Integer[] counter = new Integer[] {0};
         Supplier<Integer> incr = new Supplier<Integer>() { public Integer get() {
             counter[0]++; return counter[0]; } };
-        Supplier<Integer> onceIncr = $.once(incr);
+        Supplier<Integer> onceIncr = U.once(incr);
         onceIncr.get();
         onceIncr.get();
         Thread.sleep(60);
@@ -211,7 +211,7 @@ hello();
                 return "hello: " + name;
             }
         };
-        Function<Void, String> result = $.wrap(hello, new Function<Function<String, String>, String>() {
+        Function<Void, String> result = U.wrap(hello, new Function<Function<String, String>, String>() {
             public String apply(final Function<String, String> func) {
                 return "before, " + func.apply("moe") + ", after";
             }
@@ -226,12 +226,12 @@ _.find([-2, -1, 0, 1, 2], isFalsy);
 */
     @Test
     public void negate() {
-        Predicate<Integer> isFalsy = $.negate(new Predicate<Integer>() {
+        Predicate<Integer> isFalsy = U.negate(new Predicate<Integer>() {
             public boolean test(final Integer item) {
                 return item != 0;
             }
         });
-        Optional<Integer> result = $.find(asList(-2, -1, 0, 1, 2), isFalsy);
+        Optional<Integer> result = U.find(asList(-2, -1, 0, 1, 2), isFalsy);
         assertEquals(0, result.get().intValue());
     }
 
@@ -255,7 +255,7 @@ welcome('moe');
                 return statement.toUpperCase() + "!";
             }
         };
-        Function<String, String> welcome = $.compose(greet, exclaim);
+        Function<String, String> welcome = U.compose(greet, exclaim);
         assertEquals("hi: MOE!", welcome.apply("moe"));
     }
 
@@ -269,11 +269,11 @@ _.each(notes, function(note) {
     @Test
     public void after() {
         final List<Integer> notes = asList(1, 2, 3);
-        final Supplier<Integer> renderNotes = $.after(notes.size(),
+        final Supplier<Integer> renderNotes = U.after(notes.size(),
             new Supplier<Integer>() { public Integer get() {
                 return 4; } });
         final List<Integer> result = new ArrayList<Integer>();
-        $.<Integer>each(notes, new Consumer<Integer>() {
+        U.<Integer>each(notes, new Consumer<Integer>() {
             public void accept(Integer item) {
                 result.add(item);
                 Integer afterResult = renderNotes.get();
@@ -295,11 +295,11 @@ monthlyMeeting();
     @Test
     public void before() {
         final List<Integer> notes = asList(1, 2, 3);
-        final Supplier<Integer> renderNotes = $.before(notes.size() - 1,
+        final Supplier<Integer> renderNotes = U.before(notes.size() - 1,
             new Supplier<Integer>() { public Integer get() {
                 return 4; } });
         final List<Integer> result = new ArrayList<Integer>();
-        $.<Integer>each(notes, new Consumer<Integer>() {
+        U.<Integer>each(notes, new Consumer<Integer>() {
             public void accept(Integer item) {
                 result.add(item);
                 Integer afterResult = renderNotes.get();
@@ -324,7 +324,7 @@ _.map(stooges, _.iteratee('age'));
             new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } },
             new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } }
         );
-        final List<Object> result = $.map(stooges, $.iteratee("age"));
+        final List<Object> result = U.map(stooges, U.iteratee("age"));
         assertEquals("[25, 21, 23]", result.toString());
     }
 
@@ -333,7 +333,7 @@ _.map(stooges, _.iteratee('age'));
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        $.setTimeout(incr, 0);
+        U.setTimeout(incr, 0);
         Thread.sleep(40);
         assertEquals(1, counter[0].intValue());
     }
@@ -343,9 +343,9 @@ _.map(stooges, _.iteratee('age'));
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        java.util.concurrent.ScheduledFuture future = $.setTimeout(incr, 20);
-        $.clearTimeout(future);
-        $.clearTimeout(null);
+        java.util.concurrent.ScheduledFuture future = U.setTimeout(incr, 20);
+        U.clearTimeout(future);
+        U.clearTimeout(null);
         Thread.sleep(40);
         assertEquals(0, counter[0].intValue());
     }
@@ -355,7 +355,7 @@ _.map(stooges, _.iteratee('age'));
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        $.setInterval(incr, 10);
+        U.setInterval(incr, 10);
         Thread.sleep(45);
         assertTrue("Counter is not in range [4, 5, 6] " + counter[0], asList(4, 5, 6).contains(counter[0]));
     }
@@ -365,9 +365,9 @@ _.map(stooges, _.iteratee('age'));
         final Integer[] counter = new Integer[] {0};
         Supplier<Void> incr = new Supplier<Void>() { public Void get() {
             counter[0]++; return null; } };
-        java.util.concurrent.ScheduledFuture future = $.setInterval(incr, 20);
-        $.clearInterval(future);
-        $.clearInterval(null);
+        java.util.concurrent.ScheduledFuture future = U.setInterval(incr, 20);
+        U.clearInterval(future);
+        U.clearInterval(null);
         Thread.sleep(40);
         assertEquals(0, counter[0].intValue());
     }

@@ -477,6 +477,7 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
         assertEquals("{\"gameId\":483159,\"knight\":{\"name\":"
             + "\"Sir. Russell Jones of Alberta\",\"attack\":2,\"armor\":7,\"agility\":3,\"endurance\":8}}",
             resultChain.item());
+        U.chain("http://www.dragonsofmugloar.com/api/game/483159").fetch();
     }
 
     @Test
@@ -801,5 +802,15 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
 
         assertEquals("{root={Durapipe=1, EXPLAIN=2, woods=2, hanging=3, hastily=2, localized=1, "
             + "Schuster=5, regularize=1, LASR=1, LAST=22, Gelch=2, Gelco=26}}", U.fromXml(xml).toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void sqlru1() {
+        // http://www.sql.ru/forum/1296485/poluchit-nazvaniya-iz-json-v-jsp
+        String json = "{\"memory\":[{\"alert\":\"false\",\"value\":\"50%\"}],\"cpu\":"
+        + "[{\"alert\":\"true\",\"value\":\"100%\"}],\"hdd\":[{\"alert\":\"false\",\"value\":\"80%\"}]}";
+
+        assertEquals("[memory, cpu, hdd]", U.keys((Map<String, Object>) U.fromJson(json)).toString());
     }
 }

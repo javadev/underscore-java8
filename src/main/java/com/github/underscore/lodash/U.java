@@ -1783,6 +1783,10 @@ public class U<T> extends com.github.underscore.U<T> {
             return this;
         }
 
+        public int getIdent() {
+            return ident;
+        }
+
         public String toString() {
             return builder.toString() + "\n</root>";
         }
@@ -1798,25 +1802,45 @@ public class U<T> extends com.github.underscore.U<T> {
         }
     }
 
+    public static class XmlStringBuilderWithoutHeader extends XmlStringBuilder {
+        public XmlStringBuilderWithoutHeader(int ident) {
+            super(new StringBuilder(""), ident);
+        }
+
+        public String toString() {
+            return builder.toString();
+        }
+    }
+
     public static class XmlArray {
-        public static void writeXml(Collection collection, XmlStringBuilder builder) {
+        public static void writeXml(Collection collection, String name, XmlStringBuilder builder, boolean parentTextFound) {
             if (collection == null) {
                 builder.append(NULL);
                 return;
             }
 
-            Iterator iter = collection.iterator();
+            if (name != null) {
+                builder.fillSpaces().append("<").append(name).append(">").incIdent();
+                if (!collection.isEmpty()) {
+                    builder.newLine();
+                }
+            }
+            writeXml(collection, builder, name, parentTextFound);
+            if (name != null) {
+                builder.decIdent().newLine().fillSpaces().append("</").append(name).append(">");
+            }
+        }
 
+        private static void writeXml(Collection collection, XmlStringBuilder builder, String name, boolean parentTextFound) {
+            Iterator iter = collection.iterator();
             while (iter.hasNext()) {
                 Object value = iter.next();
                 if (value == null) {
-                    builder.fillSpaces().append(NULL_ELEMENT);
-                    continue;
+                    builder.fillSpaces().append("<" + (name == null ? "element" : name) + ">"
+                            + NULL + "</" + (name == null ? "element" : name) + ">");
+                } else {
+                    XmlValue.writeXml(value, name == null ? "element" : name, builder, parentTextFound);
                 }
-
-                builder.fillSpaces().append(ELEMENT);
-                XmlValue.writeXml(value, builder);
-                builder.append(CLOSED_ELEMENT);
                 if (iter.hasNext()) {
                     builder.newLine();
                 }
@@ -1959,16 +1983,14 @@ public class U<T> extends com.github.underscore.U<T> {
             }
         }
 
-        public static void writeXml(Object[] array, XmlStringBuilder builder) {
+        public static void writeXml(Object[] array, String name, XmlStringBuilder builder, boolean parentTextFound) {
             if (array == null) {
                 builder.fillSpaces().append(NULL_ELEMENT);
             } else if (array.length == 0) {
                 builder.fillSpaces().append(EMPTY_ELEMENT);
             } else {
                 for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    XmlValue.writeXml(array[i], builder);
-                    builder.append(CLOSED_ELEMENT);
+                    XmlValue.writeXml(array[i], name == null ? "element" : name, builder, parentTextFound);
                     if (i != array.length - 1) {
                         builder.newLine();
                     }
@@ -1978,27 +2000,79 @@ public class U<T> extends com.github.underscore.U<T> {
     }
 
     public static class XmlObject {
-        public static void writeXml(Map map, XmlStringBuilder builder) {
+        public static void writeXml(Map map, String name, XmlStringBuilder builder, boolean parentTextFound) {
             if (map == null) {
                 builder.append(NULL);
                 return;
             }
 
+            List<XmlStringBuilder> elems = newArrayList();
+            List<String> attrs = newArrayList();
             Iterator iter = map.entrySet().iterator();
+            int ident = builder.getIdent() + (name != null ? 2 : 0);
+            boolean textFoundSave = false;
+            boolean textFound = false;
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
-                builder.fillSpaces().append("<").append(escape(String.valueOf(entry.getKey()))).append(">");
-                XmlValue.writeXml(entry.getValue(), builder);
-                builder.append("</").append(escape(String.valueOf(entry.getKey()))).append(">");
-                if (iter.hasNext()) {
+                if (escape(String.valueOf(entry.getKey())).startsWith("-") && entry.getValue() instanceof String) {
+                    attrs.add(" " + escape(String.valueOf(entry.getKey())).substring(1)
+                        + "=\"" + escape((String) entry.getValue()) + "\"");
+                } else if ("#text".equals(escape(String.valueOf(entry.getKey())))) {
+                    textFoundSave = true;
+                    textFound = true;
+                    elems.add(new XmlStringBuilderWithoutHeader(ident).append(escape((String) entry.getValue())));
+                } else if (entry.getValue() instanceof List && !((List) entry.getValue()).isEmpty()) {
+                    XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
+                    XmlArray.writeXml((List) entry.getValue(), localBuilder,
+                        escape(String.valueOf(entry.getKey())), textFound);
+                    if (iter.hasNext()) {
+                        localBuilder.newLine();
+                    }
+                    elems.add(localBuilder);
+                } else {
+                    XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
+                    XmlValue.writeXml(entry.getValue(),
+                        escape(String.valueOf(entry.getKey())), localBuilder, textFound);
+                    textFound = false;
+                    if (iter.hasNext()) {
+                        localBuilder.newLine();
+                    }
+                    elems.add(localBuilder);
+                }
+            }
+            if (name != null) {
+                builder.fillSpaces().append("<").append(name).append(U.join(attrs, "")).append(">").incIdent();
+                if (!textFoundSave) {
                     builder.newLine();
                 }
+            }
+            for (XmlStringBuilder localBuilder : elems) {
+                builder.append(localBuilder.toString());
+            }
+            if (name != null) {
+                builder.decIdent();
+                if (!textFound) {
+                    builder.newLine().fillSpaces();
+                }
+                builder.append("</").append(name).append(">");
             }
         }
     }
 
     public static class XmlValue {
-        public static void writeXml(Object value, XmlStringBuilder builder) {
+        public static void writeXml(Object value, String name, XmlStringBuilder builder, boolean parentTextFound) {
+            if (value instanceof Map) {
+                XmlObject.writeXml((Map) value,  name, builder, parentTextFound);
+                return;
+            }
+            if (value instanceof Collection) {
+                XmlArray.writeXml((Collection) value, name, builder, parentTextFound);
+                return;
+            }
+            if (!parentTextFound) {
+                builder.fillSpaces();
+            }
+            builder.append("<" + name + ">");
             if (value == null) {
                 builder.append(NULL);
             } else if (value instanceof String) {
@@ -2019,53 +2093,46 @@ public class U<T> extends com.github.underscore.U<T> {
                 builder.append(value.toString());
             } else if (value instanceof Boolean) {
                 builder.append(value.toString());
-            } else if (value instanceof Map) {
-                builder.newLine().incIdent();
-                XmlObject.writeXml((Map) value, builder);
-                builder.newLine().decIdent().fillSpaces();
-            } else if (value instanceof Collection) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((Collection) value, builder);
-                builder.newLine().decIdent().fillSpaces();
             } else if (value instanceof byte[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((byte[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof short[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((short[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof int[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((int[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof long[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((long[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof float[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((float[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof double[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((double[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof boolean[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((boolean[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof char[]) {
                 builder.newLine().incIdent();
                 XmlArray.writeXml((char[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                builder.decIdent().newLine().fillSpaces();
             } else if (value instanceof Object[]) {
                 builder.newLine().incIdent();
-                XmlArray.writeXml((Object[]) value, builder);
-                builder.newLine().decIdent().fillSpaces();
+                XmlArray.writeXml((Object[]) value, name, builder, parentTextFound);
+                builder.decIdent().newLine().fillSpaces();
             } else {
                 builder.append(value.toString());
             }
+            builder.append("</" + name + ">");
         }
 
         public static String escape(String s) {
@@ -2107,16 +2174,13 @@ public class U<T> extends com.github.underscore.U<T> {
                     sb.append("\\f");
                     break;
                 case '\n':
-                    sb.append("\\n");
+                    sb.append("\n");
                     break;
                 case '\r':
                     sb.append("\\r");
                     break;
                 case '\t':
                     sb.append("\\t");
-                    break;
-                case '/':
-                    sb.append("\\/");
                     break;
                 default:
                     if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
@@ -2139,7 +2203,7 @@ public class U<T> extends com.github.underscore.U<T> {
     public static String toXml(Collection collection) {
         final XmlStringBuilder builder = new XmlStringBuilder();
 
-        XmlArray.writeXml(collection, builder);
+        XmlArray.writeXml(collection, null, builder, false);
         return builder.toString();
     }
 
@@ -2149,13 +2213,14 @@ public class U<T> extends com.github.underscore.U<T> {
 
     public static String toXml(Map map) {
         final XmlStringBuilder builder;
-        if (map != null && map.size() == 1) {
-            builder = new XmlStringBuilderWithoutRoot();
-        } else {
+        if ((map == null || map.size() != 1)
+            || ((Map.Entry) map.entrySet().iterator().next()).getValue() instanceof List) {
             builder = new XmlStringBuilder();
+        } else {
+            builder = new XmlStringBuilderWithoutRoot();
         }
 
-        XmlObject.writeXml(map, builder);
+        XmlObject.writeXml(map, null, builder, false);
         return builder.toString();
     }
 
@@ -2537,7 +2602,7 @@ public class U<T> extends com.github.underscore.U<T> {
 
     @SuppressWarnings("unchecked")
     private static Object getValue(final Object value) {
-        if (value instanceof Map && ((Map<String, Object>) value).entrySet().iterator().hasNext()) {
+        if (value instanceof Map && ((Map<String, Object>) value).entrySet().size() == 1) {
             final Map.Entry<String, Object> entry = ((Map<String, Object>) value).entrySet().iterator().next();
             if (entry.getKey().equals("#text") || entry.getKey().equals("element")) {
                 return entry.getValue();
@@ -2548,36 +2613,51 @@ public class U<T> extends com.github.underscore.U<T> {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> createMap(final org.w3c.dom.Node node,
-        final Function<Object, Object> nodeMapper) {
+        final Function<Object, Object> nodeMapper, Map<String, Object> attrMap) {
         final Map<String, Object> map = newLinkedHashMap();
+        map.putAll(attrMap);
         final org.w3c.dom.NodeList nodeList = node.getChildNodes();
         for (int index = 0; index < nodeList.getLength(); index++) {
             final org.w3c.dom.Node currentNode = nodeList.item(index);
             final String name = currentNode.getNodeName();
             final Object value;
+            final int attributesLength = currentNode.getAttributes() == null
+                    ? 0 : currentNode.getAttributes().getLength();
             if (currentNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
-                value = createMap(currentNode, nodeMapper);
+                final Map<String, Object> attrMapLocal = newLinkedHashMap();
+                for (int indexAttr = 0; indexAttr < attributesLength; indexAttr += 1) {
+                    final org.w3c.dom.Node currentNodeAttr = currentNode.getAttributes().item(indexAttr);
+                    addNodeValue(attrMapLocal, '-' + currentNodeAttr.getNodeName(),
+                            currentNodeAttr.getTextContent(), nodeMapper);
+                }
+                value = createMap(currentNode, nodeMapper, attrMapLocal);
             } else {
                 value = currentNode.getTextContent();
             }
             if ("#text".equals(name) && value.toString().trim().isEmpty()) {
                 continue;
             }
-            if (map.containsKey(name)) {
-                final Object object = map.get(name);
-                if (object instanceof List) {
-                    ((List<Object>) object).add(getValue(value));
-                } else {
-                    final List<Object> objects = newArrayList();
-                    objects.add(object);
-                    objects.add(getValue(value));
-                    map.put(name, objects);
-                }
-            } else {
-                map.put(name, nodeMapper.apply(getValue(value)));
-            }
+            addNodeValue(map, name, value, nodeMapper);
         }
         return map;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addNodeValue(final Map<String, Object> map, final String name, final Object value,
+            final Function<Object, Object> nodeMapper) {
+        if (map.containsKey(name)) {
+            final Object object = map.get(name);
+            if (object instanceof List) {
+                ((List<Object>) object).add(getValue(value));
+            } else {
+                final List<Object> objects = newArrayList();
+                objects.add(object);
+                objects.add(getValue(value));
+                map.put(name, objects);
+            }
+        } else {
+            map.put(name, nodeMapper.apply(getValue(value)));
+        }
     }
 
     public static Object fromXml(final String xml) {
@@ -2591,7 +2671,7 @@ public class U<T> extends com.github.underscore.U<T> {
                 public Object apply(Object object) {
                     return object;
                 }
-            });
+            }, Collections.<String, Object>emptyMap());
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }
@@ -2608,7 +2688,7 @@ public class U<T> extends com.github.underscore.U<T> {
                 public Object apply(Object object) {
                     return object instanceof List ? object : newArrayList(Arrays.asList(object));
                 }
-            });
+            }, Collections.<String, Object>emptyMap());
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }

@@ -1603,11 +1603,14 @@ public class U<T> extends com.github.underscore.U<T> {
 
             Iterator iter = map.entrySet().iterator();
 
-            builder.append('{').newLine().incIdent();
+            builder.append('{').incIdent();
+            if (!map.isEmpty()) {
+                builder.newLine();
+            }
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 builder.fillSpaces().append('\"');
-                builder.append(escape(String.valueOf(entry.getKey())));
+                builder.append(JsonValue.unescapeName(String.valueOf(entry.getKey())));
                 builder.append('\"');
                 builder.append(':').append(' ');
                 JsonValue.writeJson(entry.getValue(), builder);
@@ -1666,6 +1669,45 @@ public class U<T> extends com.github.underscore.U<T> {
             } else {
                 builder.append(value.toString());
             }
+        }
+
+        public static String unescapeName(final String name) {
+            final int length = name.length();
+            if (length == 0) {
+                return "";
+            }
+            StringBuilder result = new StringBuilder();
+            int underlineCount = 0;
+            StringBuilder lastChars = new StringBuilder();
+            outer:
+            for (int i = 0; i < length; ++i) {
+                char ch = name.charAt(i);
+                if (ch == '_') {
+                    lastChars.append(ch);
+                } else {
+                    if (lastChars.length() == 2) {
+                        StringBuilder nameToDecode = new StringBuilder();
+                        for (int j = i; j < length; ++j) {
+                            if (name.charAt(j) == '_') {
+                                underlineCount += 1;
+                                if (underlineCount == 2) {
+                                    result.append(Base32.decode(nameToDecode.toString()));
+                                    i = j;
+                                    underlineCount = 0;
+                                    lastChars.setLength(0);
+                                    continue outer;
+                                }
+                            } else {
+                                nameToDecode.append(name.charAt(j));
+                                underlineCount = 0;
+                            }
+                        }
+                    }
+                    result.append(lastChars).append(ch);
+                    lastChars.setLength(0);
+                }
+            }
+            return result.append(lastChars).toString();
         }
 
         public static String escape(String s) {
@@ -1813,7 +1855,8 @@ public class U<T> extends com.github.underscore.U<T> {
     }
 
     public static class XmlArray {
-        public static void writeXml(Collection collection, String name, XmlStringBuilder builder, boolean parentTextFound) {
+        public static void writeXml(Collection collection, String name, XmlStringBuilder builder,
+            boolean parentTextFound) {
             if (collection == null) {
                 builder.append(NULL);
                 return;
@@ -1831,7 +1874,8 @@ public class U<T> extends com.github.underscore.U<T> {
             }
         }
 
-        private static void writeXml(Collection collection, XmlStringBuilder builder, String name, boolean parentTextFound) {
+        private static void writeXml(Collection collection, XmlStringBuilder builder, String name,
+            boolean parentTextFound) {
             Iterator iter = collection.iterator();
             while (iter.hasNext()) {
                 Object value = iter.next();
@@ -2000,6 +2044,7 @@ public class U<T> extends com.github.underscore.U<T> {
     }
 
     public static class XmlObject {
+        @SuppressWarnings("unchecked")
         public static void writeXml(Map map, String name, XmlStringBuilder builder, boolean parentTextFound) {
             if (map == null) {
                 builder.append(NULL);
@@ -2008,41 +2053,53 @@ public class U<T> extends com.github.underscore.U<T> {
 
             List<XmlStringBuilder> elems = newArrayList();
             List<String> attrs = newArrayList();
-            Iterator iter = map.entrySet().iterator();
-            int ident = builder.getIdent() + (name != null ? 2 : 0);
+            int ident = builder.getIdent() + (name == null ? 0 : 2);
             boolean textFoundSave = false;
             boolean textFound = false;
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                if (escape(String.valueOf(entry.getKey())).startsWith("-") && entry.getValue() instanceof String) {
-                    attrs.add(" " + escape(String.valueOf(entry.getKey())).substring(1)
+            List<Map.Entry> entries = newArrayList(map.entrySet());
+            for (int index = 0; index < entries.size(); index += 1) {
+                Map.Entry entry = entries.get(index);
+                if (String.valueOf(entry.getKey()).startsWith("-") && entry.getValue() instanceof String) {
+                    attrs.add(" " + XmlValue.escapeName(String.valueOf(entry.getKey()).substring(1))
                         + "=\"" + escape((String) entry.getValue()) + "\"");
                 } else if ("#text".equals(escape(String.valueOf(entry.getKey())))) {
-                    textFoundSave = true;
+                    if (elems.isEmpty()) {
+                        textFoundSave = true;
+                    }
                     textFound = true;
-                    elems.add(new XmlStringBuilderWithoutHeader(ident).append(escape((String) entry.getValue())));
+                    final String value;
+                    if (entry.getValue() instanceof List) {
+                        value = U.join((List) entry.getValue(), "");
+                    } else {
+                        value = (String) entry.getValue();
+                    }
+                    elems.add(new XmlStringBuilderWithoutHeader(ident).append(escape(value)));
                 } else if (entry.getValue() instanceof List && !((List) entry.getValue()).isEmpty()) {
                     XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
                     XmlArray.writeXml((List) entry.getValue(), localBuilder,
-                        escape(String.valueOf(entry.getKey())), textFound);
-                    if (iter.hasNext()) {
+                        XmlValue.escapeName(String.valueOf(entry.getKey())), textFound);
+                    if (index < entries.size() - 1) {
                         localBuilder.newLine();
                     }
                     elems.add(localBuilder);
                 } else {
                     XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
                     XmlValue.writeXml(entry.getValue(),
-                        escape(String.valueOf(entry.getKey())), localBuilder, textFound);
+                        XmlValue.escapeName(String.valueOf(entry.getKey())), localBuilder, textFound);
                     textFound = false;
-                    if (iter.hasNext()) {
+                    if (index < entries.size() - 1
+                            && !"#text".equals(String.valueOf(entries.get(index + 1).getKey()))) {
                         localBuilder.newLine();
                     }
                     elems.add(localBuilder);
                 }
             }
             if (name != null) {
-                builder.fillSpaces().append("<").append(name).append(U.join(attrs, "")).append(">").incIdent();
-                if (!textFoundSave) {
+                if (!parentTextFound) {
+                    builder.fillSpaces();
+                }
+                builder.append("<").append(name).append(U.join(attrs, "")).append(">").incIdent();
+                if (!textFoundSave && !map.isEmpty()) {
                     builder.newLine();
                 }
             }
@@ -2133,6 +2190,29 @@ public class U<T> extends com.github.underscore.U<T> {
                 builder.append(value.toString());
             }
             builder.append("</" + name + ">");
+        }
+
+        public static String escapeName(String name) {
+            final int length = name.length();
+            if (length == 0) {
+                return "";
+            }
+            StringBuilder result = new StringBuilder();
+            char ch = name.charAt(0);
+            if (com.sun.org.apache.xerces.internal.util.XMLChar.isNameStart(ch)) {
+                result.append(ch);
+            } else {
+                result.append("__").append(Base32.encode(Character.toString(ch))).append("__");
+            }
+            for (int i = 1; i < length; ++i) {
+                ch = name.charAt(i);
+                if (com.sun.org.apache.xerces.internal.util.XMLChar.isName(ch)) {
+                    result.append(ch);
+                } else {
+                    result.append("__").append(Base32.encode(Character.toString(ch))).append("__");
+                }
+            }
+            return result.toString();
         }
 
         public static String escape(String s) {
@@ -3455,25 +3535,17 @@ public class U<T> extends com.github.underscore.U<T> {
         return createPermutationWithRepetition((List<T>) value(), permutationLength);
     }
 
-    public static List<Entry> findByName(final Entry entry, final String name) {
-        final List<Entry> result = new ArrayList<Entry>();
-        final Queue<Entry> allFiles = new LinkedList<Entry>();
-        allFiles.add(entry);
-        while (!allFiles.isEmpty()) {
-            final Entry localEntry = allFiles.poll();
-            if (localEntry instanceof Directory) {
-                final List<Entry> files = ((Directory) localEntry).getContents();
-                for (final Entry innerFile : files) {
-                    if (innerFile instanceof Directory) {
-                        allFiles.add(innerFile);
-                    } else if (innerFile.getName().equals(name)) {
-                        result.add(innerFile);
-                    }
-                }
-            } else if (localEntry.getName().equals(name)) {
-                result.add(localEntry);
-            }
+    @SuppressWarnings("unchecked")
+    public static String jsonToXml(String json) {
+        Object result = fromJson(json);
+        if (result instanceof Map) {
+            return toXml((Map<String, Object>) result);
         }
-        return result;
+        return toXml((List) result);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String xmlToJson(String xml) {
+        return toJson((Map<String, Object>) fromXml(xml));
     }
 }

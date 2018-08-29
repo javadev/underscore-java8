@@ -61,8 +61,9 @@ public final class Optional<T> {
         U.checkNotNull(mapper);
         if (isPresent()) {
             return Optional.fromNullable(mapper.apply(arg));
+        } else {
+            return absent();
         }
-        return absent();
     }
 
     public <X extends Throwable> T orThrow(Supplier<? extends X> exceptionFunction) throws X {
@@ -96,6 +97,6 @@ public final class Optional<T> {
 
     @Override
     public String toString() {
-        return absent ? "Optional.empty" : "Optional[" + arg + "]";
+        return absent ? "Optional.absent()" : "Optional.of(" + arg + ")";
     }
 }

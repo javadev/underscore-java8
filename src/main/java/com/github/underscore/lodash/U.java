@@ -1673,8 +1673,11 @@ public class U<T> extends com.github.underscore.U<T> {
 
         public static String unescapeName(final String name) {
             final int length = name.length();
-            if (length == 0) {
+            if (length == 0 || "__EE__EMPTY__EE__".equals(name)) {
                 return "";
+            }
+            if ("-__EE__EMPTY__EE__".equals(name)) {
+                return "-";
             }
             StringBuilder result = new StringBuilder();
             int underlineCount = 0;
@@ -2047,7 +2050,7 @@ public class U<T> extends com.github.underscore.U<T> {
         @SuppressWarnings("unchecked")
         public static void writeXml(Map map, String name, XmlStringBuilder builder, boolean parentTextFound) {
             if (map == null) {
-                builder.append(NULL);
+                XmlValue.writeXml(map, name, builder, false);
                 return;
             }
 
@@ -2074,6 +2077,10 @@ public class U<T> extends com.github.underscore.U<T> {
                         value = (String) entry.getValue();
                     }
                     elems.add(new XmlStringBuilderWithoutHeader(ident).append(escape(value)));
+                } else if ("#comment".equals(escape(String.valueOf(entry.getKey())))) {
+                    addComment(entry, ident, index < entries.size() - 1, elems, "<!--", "-->");
+                } else if ("#cdata-section".equals(escape(String.valueOf(entry.getKey())))) {
+                    addComment(entry, ident, index < entries.size() - 1, elems, "<![CDATA[", "]]>");
                 } else if (entry.getValue() instanceof List && !((List) entry.getValue()).isEmpty()) {
                     XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
                     XmlArray.writeXml((List) entry.getValue(), localBuilder,
@@ -2113,6 +2120,29 @@ public class U<T> extends com.github.underscore.U<T> {
                 }
                 builder.append("</").append(name).append(">");
             }
+        }
+
+        private static void addComment(Map.Entry entry, int ident, boolean addNewLine,
+                List<XmlStringBuilder> elems, String openElement, String closeElement) {
+            if (entry.getValue() instanceof List) {
+                for (Iterator iterator = ((List) entry.getValue()).iterator(); iterator.hasNext(); ) {
+                    addCommentValue(ident, (String) iterator.next(),
+                            iterator.hasNext() || addNewLine, elems, openElement, closeElement);
+                }
+            } else {
+                addCommentValue(ident, (String) entry.getValue(), addNewLine, elems,
+                        openElement, closeElement);
+            }
+        }
+
+        private static void addCommentValue(int ident, String value, boolean addNewLine,
+                List<XmlStringBuilder> elems, String openElement, String closeElement) {
+            XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident)
+                    .fillSpaces().append(openElement).append(value).append(closeElement);
+            if (addNewLine) {
+                localBuilder.newLine();
+            }
+            elems.add(localBuilder);
         }
     }
 
@@ -2195,9 +2225,9 @@ public class U<T> extends com.github.underscore.U<T> {
         public static String escapeName(String name) {
             final int length = name.length();
             if (length == 0) {
-                return "";
+                return "__EE__EMPTY__EE__";
             }
-            StringBuilder result = new StringBuilder();
+            final StringBuilder result = new StringBuilder();
             char ch = name.charAt(0);
             if (com.sun.org.apache.xerces.internal.util.XMLChar.isNameStart(ch)) {
                 result.append(ch);
@@ -2244,9 +2274,6 @@ public class U<T> extends com.github.underscore.U<T> {
                 case '>':
                     sb.append("&gt;");
                     break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
                 case '\b':
                     sb.append("\\b");
                     break;
@@ -2292,15 +2319,14 @@ public class U<T> extends com.github.underscore.U<T> {
     }
 
     public static String toXml(Map map) {
-        final XmlStringBuilder builder;
-        if ((map == null || map.size() != 1)
+        final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot();
+        if (map == null || map.size() != 1
+            || ((String) ((Map.Entry) map.entrySet().iterator().next()).getKey()).startsWith("-")
             || ((Map.Entry) map.entrySet().iterator().next()).getValue() instanceof List) {
-            builder = new XmlStringBuilder();
+            XmlObject.writeXml(map, "root", builder, false);
         } else {
-            builder = new XmlStringBuilderWithoutRoot();
+            XmlObject.writeXml(map, null, builder, false);
         }
-
-        XmlObject.writeXml(map, null, builder, false);
         return builder.toString();
     }
 

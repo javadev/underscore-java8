@@ -21,7 +21,7 @@ Include the following in your `pom.xml` for Maven:
   <dependency>
     <groupId>com.github.javadev</groupId>
     <artifactId>underscore8</artifactId>
-    <version>1.5</version>
+    <version>1.6</version>
   </dependency>
   ...
 </dependencies>
@@ -30,10 +30,33 @@ Include the following in your `pom.xml` for Maven:
 Gradle:
 
 ```groovy
-compile 'com.github.javadev:underscore8:1.5'
+compile 'com.github.javadev:underscore8:1.6'
 ```
 
 Underscore-java is a java port of [Underscore.js](http://underscorejs.org/).
+
+### Usage
+
+```java
+U.chain(/* array | list | set | map | anything based on Iterable interface */)
+    .filter(..)
+    .map(..)
+    ...
+    .sortWith()
+    .forEach(..);
+U.chain(value1, value2, value3)...
+U.range(0, 10)...
+
+U.chain(1, 2, 3) // or java.util.Arrays.asList(1, 2, 3) or new Integer[] {1, 2, 3}
+    .filter(v -> v > 1)
+    // 2, 3
+    .map(v -> v + 1)
+    // 3, 4
+    .sortWith((a, b) -> b.compareTo(a))
+    // 4, 3
+    .forEach(System.out::println);
+    // 4, 3
+```
 
 In addition to porting Underscore's functionality, Underscore-java includes matching unit tests.
 

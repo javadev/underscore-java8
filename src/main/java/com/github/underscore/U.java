@@ -125,16 +125,14 @@ public class U<T> {
             String result = template;
             for (final Map.Entry<K, V> element : value.entrySet()) {
                 result = java.util.regex.Pattern.compile(interpolate.replace(ALL_SYMBOLS,
-                    "\\s*\\Q" + ((Map.Entry) element).getKey()
-                    + "\\E\\s*")).matcher(result).replaceAll(String.valueOf(((Map.Entry) element).getValue()));
+                    "\\s*\\Q" + element.getKey()
+                    + "\\E\\s*")).matcher(result).replaceAll(String.valueOf(element.getValue()));
                 result = java.util.regex.Pattern.compile(escape.replace(ALL_SYMBOLS,
-                    "\\s*\\Q" + ((Map.Entry) element).getKey()
-                    + "\\E\\s*")).matcher(result).replaceAll(escape(String.valueOf(((Map.Entry) element)
-                    .getValue())));
+                    "\\s*\\Q" + element.getKey()
+                    + "\\E\\s*")).matcher(result).replaceAll(escape(String.valueOf(element.getValue())));
                 result = java.util.regex.Pattern.compile(evaluate.replace(ALL_SYMBOLS,
-                    "\\s*\\Q" + ((Map.Entry) element).getKey()
-                    + "\\E\\s*")).matcher(result).replaceAll(String.valueOf(((Map.Entry) element)
-                    .getValue()));
+                    "\\s*\\Q" + element.getKey()
+                    + "\\E\\s*")).matcher(result).replaceAll(String.valueOf(element.getValue()));
             }
             return result;
         }
@@ -148,19 +146,19 @@ public class U<T> {
             final List<String> notFound = new ArrayList<String>();
             final List<String> valueKeys = new ArrayList<String>();
             for (final Map.Entry<K, V> element : value.entrySet()) {
-                final String key = "" + ((Map.Entry) element).getKey();
+                final String key = "" + element.getKey();
                 java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(interpolate.replace(ALL_SYMBOLS,
                     "\\s*\\Q" + key + "\\E\\s*")).matcher(result);
                 boolean isFound = matcher.find();
-                result = matcher.replaceAll(String.valueOf(((Map.Entry) element).getValue()));
+                result = matcher.replaceAll(String.valueOf(element.getValue()));
                 matcher = java.util.regex.Pattern.compile(escape.replace(ALL_SYMBOLS,
                     "\\s*\\Q" + key + "\\E\\s*")).matcher(result);
                 isFound |= matcher.find();
-                result = matcher.replaceAll(escape(String.valueOf(((Map.Entry) element).getValue())));
+                result = matcher.replaceAll(escape(String.valueOf(element.getValue())));
                 matcher = java.util.regex.Pattern.compile(evaluate.replace(ALL_SYMBOLS,
                     "\\s*\\Q" + key + "\\E\\s*")).matcher(result);
                 isFound |= matcher.find();
-                result = matcher.replaceAll(String.valueOf(((Map.Entry) element).getValue()));
+                result = matcher.replaceAll(String.valueOf(element.getValue()));
                 if (!isFound) {
                     notFound.add(key);
                 }
@@ -1257,7 +1255,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <E> E[] distinct(final E ... array) {
-        return (E[]) uniq(array);
+        return uniq(array);
     }
 
     public static <K, E> Collection<E> distinctBy(final Iterable<E> iterable, final Function<E, K> func) {
@@ -1266,7 +1264,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <K, E> E[] distinctBy(final E[] array, final Function<E, K> func) {
-        return (E[]) uniq(array, func);
+        return uniq(array, func);
     }
 
     @SuppressWarnings("unchecked")
@@ -1305,7 +1303,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <E> List<E> intersection(final List<E> list, final List<E> ... lists) {
-        final Stack<List<E>> stack = new Stack<List<E>>();
+        final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(list);
         for (int index = 0; index < lists.length; index += 1) {
           stack.push(intersection(stack.peek(), lists[index]));
@@ -1320,7 +1318,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <E> E[] intersection(final E[] ... arrays) {
-        final Stack<List<E>> stack = new Stack<List<E>>();
+        final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(Arrays.asList(arrays[0]));
         for (int index = 1; index < arrays.length; index += 1) {
           stack.push(intersection(stack.peek(), Arrays.asList(arrays[index])));
@@ -1340,7 +1338,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <E> List<E> difference(final List<E> list, final List<E> ... lists) {
-        final Stack<List<E>> stack = new Stack<List<E>>();
+        final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(list);
         for (int index = 0; index < lists.length; index += 1) {
           stack.push(difference(stack.peek(), lists[index]));
@@ -1355,7 +1353,7 @@ public class U<T> {
 
     @SuppressWarnings("unchecked")
     public static <E> E[] difference(final E[] ... arrays) {
-        final Stack<List<E>> stack = new Stack<List<E>>();
+        final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(Arrays.asList(arrays[0]));
         for (int index = 1; index < arrays.length; index += 1) {
           stack.push(difference(stack.peek(), Arrays.asList(arrays[index])));
@@ -1493,18 +1491,17 @@ public class U<T> {
     }
 
     public static int[] range(int start, int stop) {
-        return range(start, stop, 1);
+        return range(start, stop, start < stop ? 1 : -1);
     }
 
     public static int[] range(int start, int stop, int step) {
         int[] array = new int[Math.abs(stop - start) / Math.abs(step)];
-        int index2 = 0;
         if (start < stop) {
-            for (int index = start; index < stop; index += step, index2 += 1) {
+            for (int index = start, index2 = 0; index < stop; index += step, index2 += 1) {
                 array[index2] = index;
             }
         } else {
-            for (int index = start; index > stop; index += step, index2 += 1) {
+            for (int index = start, index2 = 0; index > stop; index += step, index2 += 1) {
                 array[index2] = index;
             }
         }
@@ -2732,13 +2729,12 @@ public class U<T> {
         final int delayMilliseconds) {
         final java.util.concurrent.ScheduledExecutorService scheduler =
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
-        final java.util.concurrent.ScheduledFuture future = scheduler.scheduleAtFixedRate(
+        return scheduler.scheduleAtFixedRate(
             new Runnable() {
                 public void run() {
                     function.get();
                 }
             }, delayMilliseconds, delayMilliseconds, java.util.concurrent.TimeUnit.MILLISECONDS);
-        return future;
     }
 
     public static void clearInterval(java.util.concurrent.ScheduledFuture scheduledFuture) {

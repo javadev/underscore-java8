@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1333,10 +1334,8 @@ _.repeat('abc', 0);
         final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n"
             + "  <FirstItem>1</FirstItem>\n  <SecondItem>2</SecondItem>\n</root>";
         assertEquals("{\n"
-            + "  \"root\": {\n"
-            + "    \"FirstItem\": \"1\",\n"
-            + "    \"SecondItem\": \"2\"\n"
-            + "  }\n"
+            + "  \"FirstItem\": \"1\",\n"
+            + "  \"SecondItem\": \"2\"\n"
             + "}",
             U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1445,6 +1444,22 @@ _.repeat('abc', 0);
 
     @SuppressWarnings("unchecked")
     @Test
+    public void toJsonFromXml8() {
+        assertNull(U.fromXml(null));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toJsonFromXml9() {
+        final String xml = "<root>\n  <element>1</element>\n</root>";
+        assertEquals("{\n"
+                + "  \"root\": \"1\"\n"
+                + "}",
+                U.toJson((Map<String, Object>) U.fromXml(xml)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void toXmlFromJson() {
         final String json = "{\n"
             + "  \"root\": {\n"
@@ -1474,6 +1489,7 @@ _.repeat('abc', 0);
                 + "      \"-name\": \"sun1\",\n"
                 + "      \"-src\": \"Images\\/Sun.png\",\n"
                 + "      \"-test\": [],\n"
+                + "      \"-test2\": {},\n"
                 + "      \"hOffset\": {\n"
                 + "        \"#text\": \"250\",\n"
                 + "        \"unit\": \"mm\"\n"
@@ -1495,6 +1511,8 @@ _.repeat('abc', 0);
                 + "  <image name=\"sun1\" src=\"Images/Sun.png\">\n"
                 + "    <__FU__test>\n"
                 + "    </__FU__test>\n"
+                + "    <__FU__test2>\n"
+                + "    </__FU__test2>\n"
                 + "    <hOffset>250<unit>mm</unit>\n"
                 + "    </hOffset>\n"
                 + "    <vOffset>250</vOffset>\n"
@@ -1570,9 +1588,8 @@ _.repeat('abc', 0);
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<image name=\"sun1\" src=\"Images/Sun.png\">\n"
                 + "  <hOffset>\n"
-                + "\t\t\t\t2501\n"
-                + "    <unit>mm</unit>\n"
-                + "  </hOffset>\n"
+                + "\t\t\t\t250<unit>mm</unit>1\n"
+                + "    </hOffset>\n"
                 + "</image>",
                 U.toXml((Map<String, Object>) U.fromJson(json)));
     }
@@ -1657,8 +1674,40 @@ _.repeat('abc', 0);
     public void toXmlFromJson11() {
         final String json = "{\n  \"-id\": 1\n}";
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<root>\n  <__FU__id>1</__FU__id>\n</root>",
+                + "<root id=\"1\">\n</root>",
                 U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson12() {
+        final String json = "{\n  \"a\": {\n    \"#text\": \"\\ntext\\n\",\n    \"b\": [\n"
+            + "      {\n      },\n      {\n      }\n    ]\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<a>\ntext\n<b>\n  </b>\n  <b>\n  </b>\n</a>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson13() {
+        final String json = "{\n  \"a\": {\n    \"#text\": [\n"
+            + "      \"\\ntest\\n\",\n      \"\\ntest\\n\"\n"
+            + "    ],\n    \"b\": {\n    },\n"
+            + "    \"c\": {\n    }\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<a>\ntest\n<b>\n  </b>\ntest\n<c>\n  </c>\n</a>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson14() {
+        final String json = "{\n  \"a\": {\n    \"#comment\": \"&&\",\n"
+        + "    \"#text\": \"1\"\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<a>\n  <!--&&-->1</a>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
     }
 
     @SuppressWarnings("unchecked")
@@ -1825,63 +1874,57 @@ _.repeat('abc', 0);
         + "\n</root>";
         assertEquals(
         "{"
-        + "\n  \"root\": {"
-        + "\n    \"Details\": {"
-        + "\n      \"detail-a\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail a \","
-        + "\n          \" attribute 2 of detail a \","
-        + "\n          \" attribute 3 of detail a \""
-        + "\n        ]"
-        + "\n      },"
-        + "\n      \"detail-b\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail b \","
-        + "\n          \" attribute 2 of detail b \""
-        + "\n        ]"
-        + "\n      }"
+        + "\n  \"Details\": {"
+        + "\n    \"detail-a\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail a \","
+        + "\n        \" attribute 2 of detail a \","
+        + "\n        \" attribute 3 of detail a \""
+        + "\n      ]"
+        + "\n    },"
+        + "\n    \"detail-b\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail b \","
+        + "\n        \" attribute 2 of detail b \""
+        + "\n      ]"
         + "\n    }"
         + "\n  }"
         + "\n}",
             U.toJson((Map<String, Object>) U.fromXml(string)));
         assertEquals(
         "{"
-        + "\n  \"root\": {"
-        + "\n    \"Details\": {"
-        + "\n      \"detail-a\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail a \","
-        + "\n          \" attribute 2 of detail a \","
-        + "\n          \" attribute 3 of detail a \""
-        + "\n        ]"
-        + "\n      },"
-        + "\n      \"detail-b\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail b \","
-        + "\n          \" attribute 2 of detail b \""
-        + "\n        ]"
-        + "\n      }"
+        + "\n  \"Details\": {"
+        + "\n    \"detail-a\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail a \","
+        + "\n        \" attribute 2 of detail a \","
+        + "\n        \" attribute 3 of detail a \""
+        + "\n      ]"
+        + "\n    },"
+        + "\n    \"detail-b\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail b \","
+        + "\n        \" attribute 2 of detail b \""
+        + "\n      ]"
         + "\n    }"
         + "\n  }"
         + "\n}",
             U.toJson((Map<String, Object>) new U(string).fromXml()));
         assertEquals(
         "{"
-        + "\n  \"root\": {"
-        + "\n    \"Details\": {"
-        + "\n      \"detail-a\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail a \","
-        + "\n          \" attribute 2 of detail a \","
-        + "\n          \" attribute 3 of detail a \""
-        + "\n        ]"
-        + "\n      },"
-        + "\n      \"detail-b\": {"
-        + "\n        \"detail\": ["
-        + "\n          \" attribute 1 of detail b \","
-        + "\n          \" attribute 2 of detail b \""
-        + "\n        ]"
-        + "\n      }"
+        + "\n  \"Details\": {"
+        + "\n    \"detail-a\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail a \","
+        + "\n        \" attribute 2 of detail a \","
+        + "\n        \" attribute 3 of detail a \""
+        + "\n      ]"
+        + "\n    },"
+        + "\n    \"detail-b\": {"
+        + "\n      \"detail\": ["
+        + "\n        \" attribute 1 of detail b \","
+        + "\n        \" attribute 2 of detail b \""
+        + "\n      ]"
         + "\n    }"
         + "\n  }"
         + "\n}",

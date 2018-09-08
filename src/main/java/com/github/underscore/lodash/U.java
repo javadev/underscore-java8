@@ -69,9 +69,7 @@ public class U<T> extends com.github.underscore.U<T> {
         put("\u00de", "Th"); put("\u00fe", "th");
         put("\u00df", "ss");
     } };
-    private static final Map<String, List<String>> DEFAULT_HEADER_FIELDS = new HashMap<String, List<String>>() { {
-        put("Content-Type", Arrays.asList("application/json", "charset=utf-8"));
-    } };
+    private static final Map<String, List<String>> DEFAULT_HEADER_FIELDS = new HashMap<String, List<String>>();
     private static final Set<String> SUPPORTED_HTTP_METHODS = new HashSet<String>(
         Arrays.asList("GET", "POST", "PUT", "DELETE"));
     private static final int BUFFER_LENGTH_1024 = 1024;
@@ -80,6 +78,10 @@ public class U<T> extends com.github.underscore.U<T> {
     private static String lower = "[a-z\\xdf-\\xf6\\xf8-\\xff]+";
     private static java.util.regex.Pattern reWords = java.util.regex.Pattern.compile(
         upper + "+(?=" + upper + lower + ")|" + upper + "?" + lower + "|" + upper + "+|[0-9]+");
+
+    static {
+        DEFAULT_HEADER_FIELDS.put("Content-Type", Arrays.asList("application/json", "charset=utf-8"));
+    }
 
     public U(final Iterable<T> iterable) {
         super(iterable);
@@ -1887,6 +1889,7 @@ public class U<T> extends com.github.underscore.U<T> {
                             + NULL + "</" + (name == null ? "element" : name) + ">");
                 } else {
                     XmlValue.writeXml(value, name == null ? "element" : name, builder, parentTextFound);
+                    parentTextFound = false;
                 }
                 if (iter.hasNext()) {
                     builder.newLine();
@@ -2055,58 +2058,69 @@ public class U<T> extends com.github.underscore.U<T> {
             }
 
             List<XmlStringBuilder> elems = newArrayList();
+            List<XmlStringBuilder> textElems = newArrayList();
             List<String> attrs = newArrayList();
             int ident = builder.getIdent() + (name == null ? 0 : 2);
             boolean textFoundSave = false;
-            boolean textFound = false;
             List<Map.Entry> entries = newArrayList(map.entrySet());
             for (int index = 0; index < entries.size(); index += 1) {
                 Map.Entry entry = entries.get(index);
-                if (String.valueOf(entry.getKey()).startsWith("-") && entry.getValue() instanceof String) {
+                if (String.valueOf(entry.getKey()).startsWith("-") && !(entry.getValue() instanceof Map)
+                    && !(entry.getValue() instanceof List)) {
                     attrs.add(" " + XmlValue.escapeName(String.valueOf(entry.getKey()).substring(1))
-                        + "=\"" + escape((String) entry.getValue()) + "\"");
+                        + "=\"" + escape(String.valueOf(entry.getValue())) + "\"");
                 } else if ("#text".equals(escape(String.valueOf(entry.getKey())))) {
                     if (elems.isEmpty()) {
                         textFoundSave = true;
                     }
-                    textFound = true;
-                    final String value;
                     if (entry.getValue() instanceof List) {
-                        value = U.join((List) entry.getValue(), "");
+                        for (Object value : (List) entry.getValue()) {
+                            textElems.add(new XmlStringBuilderWithoutHeader(ident).append(escape((String) value)));
+                        }
                     } else {
-                        value = (String) entry.getValue();
+                        textElems.add(new XmlStringBuilderWithoutHeader(ident).append(
+                            escape((String) entry.getValue())));
                     }
-                    elems.add(new XmlStringBuilderWithoutHeader(ident).append(escape(value)));
                 } else if ("#comment".equals(escape(String.valueOf(entry.getKey())))) {
-                    addComment(entry, ident, index < entries.size() - 1, elems, "<!--", "-->");
+                    addComment(entry, ident, index < entries.size() - 1
+                        && !"#text".equals(String.valueOf(entries.get(index + 1).getKey())), elems, "<!--", "-->");
                 } else if ("#cdata-section".equals(escape(String.valueOf(entry.getKey())))) {
                     addComment(entry, ident, index < entries.size() - 1, elems, "<![CDATA[", "]]>");
                 } else if (entry.getValue() instanceof List && !((List) entry.getValue()).isEmpty()) {
                     XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
                     XmlArray.writeXml((List) entry.getValue(), localBuilder,
-                        XmlValue.escapeName(String.valueOf(entry.getKey())), textFound);
+                        XmlValue.escapeName(String.valueOf(entry.getKey())), !textElems.isEmpty());
                     if (index < entries.size() - 1) {
                         localBuilder.newLine();
+                    }
+                    if (!textElems.isEmpty()) {
+                        elems.add(textElems.remove(0));
                     }
                     elems.add(localBuilder);
                 } else {
                     XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(ident);
                     XmlValue.writeXml(entry.getValue(),
-                        XmlValue.escapeName(String.valueOf(entry.getKey())), localBuilder, textFound);
-                    textFound = false;
+                        XmlValue.escapeName(String.valueOf(entry.getKey())), localBuilder, !textElems.isEmpty());
+                    if (!textElems.isEmpty()) {
+                        elems.add(textElems.remove(0));
+                    }
                     if (index < entries.size() - 1
-                            && !"#text".equals(String.valueOf(entries.get(index + 1).getKey()))) {
+                            && !"#text".equals(String.valueOf(entries.get(index + 1).getKey()))
+                            && textElems.isEmpty()) {
                         localBuilder.newLine();
                     }
                     elems.add(localBuilder);
                 }
+            }
+            for (XmlStringBuilder localBuilder : textElems) {
+                elems.add(localBuilder);
             }
             if (name != null) {
                 if (!parentTextFound) {
                     builder.fillSpaces();
                 }
                 builder.append("<").append(name).append(U.join(attrs, "")).append(">").incIdent();
-                if (!textFoundSave && !map.isEmpty()) {
+                if (!textFoundSave && !elems.isEmpty()) {
                     builder.newLine();
                 }
             }
@@ -2115,7 +2129,7 @@ public class U<T> extends com.github.underscore.U<T> {
             }
             if (name != null) {
                 builder.decIdent();
-                if (!textFound) {
+                if (textElems.isEmpty()) {
                     builder.newLine().fillSpaces();
                 }
                 builder.append("</").append(name).append(">");
@@ -2766,18 +2780,28 @@ public class U<T> extends com.github.underscore.U<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static Object fromXml(final String xml) {
+        if (xml == null) {
+            return null;
+        }
         try {
             final java.io.InputStream stream = new java.io.ByteArrayInputStream(xml.getBytes("UTF-8"));
             final javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             final org.w3c.dom.Document document = factory.newDocumentBuilder().parse(stream);
-            return createMap(document, new Function<Object, Object>() {
+            final Object result = createMap(document, new Function<Object, Object>() {
                 public Object apply(Object object) {
                     return object;
                 }
             }, Collections.<String, Object>emptyMap());
+            if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
+                && (((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof List
+                || ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof Map)) {
+                return ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue();
+            }
+            return result;
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }
@@ -3260,7 +3284,7 @@ public class U<T> extends com.github.underscore.U<T> {
 
         @Override
         public java.net.Socket createSocket(String arg0, int arg1, java.net.InetAddress arg2, int arg3)
-                throws java.io.IOException, java.net.UnknownHostException {
+                throws java.io.IOException {
             return getSSLContext().getSocketFactory().createSocket(arg0, arg1,
                     arg2, arg3);
         }
@@ -3271,8 +3295,7 @@ public class U<T> extends com.github.underscore.U<T> {
         }
 
         @Override
-        public java.net.Socket createSocket(String arg0, int arg1) throws java.io.IOException,
-                java.net.UnknownHostException {
+        public java.net.Socket createSocket(String arg0, int arg1) throws java.io.IOException {
             return getSSLContext().getSocketFactory().createSocket(arg0, arg1);
         }
 
@@ -3298,8 +3321,8 @@ public class U<T> extends com.github.underscore.U<T> {
                 javax.net.ssl.SSLContext context = javax.net.ssl.SSLContext.getInstance("SSL");
                 context.init(null, new javax.net.ssl.TrustManager[] { MyX509TrustManager.manger }, null);
                 return context;
-            } catch (Exception e) {
-                return null;
+            } catch (Exception ex) {
+                throw new UnsupportedOperationException(ex);
             }
         }
 
@@ -3572,6 +3595,10 @@ public class U<T> extends com.github.underscore.U<T> {
 
     @SuppressWarnings("unchecked")
     public static String xmlToJson(String xml) {
-        return toJson((Map<String, Object>) fromXml(xml));
+        Object result = fromXml(xml);
+        if (result instanceof Map) {
+            return toJson((Map) result);
+        }
+        return toJson((List) result);
     }
 }

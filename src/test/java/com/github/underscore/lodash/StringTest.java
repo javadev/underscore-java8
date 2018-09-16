@@ -771,7 +771,7 @@ _.repeat('abc', 0);
     @SuppressWarnings("unchecked")
     @Test
     public void testDecode3() {
-        assertEquals("[\n\n]", U.toJson((List<Object>) U.fromJson("[]")));
+        assertEquals("[\n]", U.toJson((List<Object>) U.fromJson("[]")));
     }
 
     @SuppressWarnings("unchecked")
@@ -932,14 +932,16 @@ _.repeat('abc', 0);
     @Test
     public void testXmlArray() {
         XmlStringBuilder builder = new XmlStringBuilder();
-        U.XmlArray.writeXml((Collection) null, null, builder, false);
+        U.XmlArray.writeXml((Collection) null, null, builder, false, Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\nnull\n</root>", builder.toString());
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, null, builder, false);
+        U.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, null, builder, false,
+            Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element>null</element>\n</root>",
             builder.toString());
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, "name", builder, false);
+        U.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, "name", builder, false,
+            Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<root>\n"
             + "  <name>\n"
@@ -1241,22 +1243,23 @@ _.repeat('abc', 0);
         XmlStringBuilder builder;
 
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml((Object[]) null, null, builder, false);
+        U.XmlArray.writeXml((Object[]) null, null, builder, false, Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element>null</element>\n</root>",
             builder.toString());
 
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml(new Object[0], null, builder, false);
+        U.XmlArray.writeXml(new Object[0], null, builder, false, Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element></element>\n</root>",
             builder.toString());
 
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml(new Object[] { "Hello" }, null, builder, false);
+        U.XmlArray.writeXml(new Object[] { "Hello" }, null, builder, false, Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element>Hello</element>\n</root>",
             builder.toString());
 
         builder = new XmlStringBuilder();
-        U.XmlArray.writeXml(new Object[] { "Hello", Integer.valueOf(12), new int[] { 1, 2, 3} }, null, builder, false);
+        U.XmlArray.writeXml(new Object[] { "Hello", Integer.valueOf(12), new int[] { 1, 2, 3} }, null, builder, false,
+            Collections.<String>emptySet());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element>Hello</element>\n  <element>"
             + "12</element>\n  <element>\n    <element>1</element>\n    <element>2</element>\n    <element>3</element>"
             + "\n  </element>\n</root>", builder.toString());
@@ -1708,6 +1711,61 @@ _.repeat('abc', 0);
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         + "<a>\n  <!--&&-->1</a>",
             U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson15() {
+        final String json = "{  \"a\": {    \"b\": {      \"c\": {"
+        + "\"#cdata-section\": \"d\",        \"#text\": \"1\\n    \"      }    }  }}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<a>\n"
+        + "  <b>\n"
+        + "    <c>\n"
+        + "      <![CDATA[d]]>1\n"
+        + "    </c>\n"
+        + "  </b>\n"
+        + "</a>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson16() {
+        final String json = "{  \"a\": {    \"b\": {      \"c\": [        {"
+        + "},        {        }      ],      \"#text\": \"\\n1\\n  \"    }  }}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<a>\n"
+        + "  <b>\n"
+        + "    <c>\n"
+        + "    </c>\n"
+        + "    <c>\n"
+        + "    </c>\n"
+        + "1\n"
+        + "  </b>\n"
+        + "</a>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson17() {
+        final String json = "{\n  \"x\": {\n    \"-xmlns:edi\": \"http:\\/\\/ecommerce.example.org\\/schema\",\n"
+        + "    \"lineItem\": {\n      \"-edi:taxClass\": \"exempt\"\n    }\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<x xmlns:edi=\"http://ecommerce.example.org/schema\">\n"
+        + "  <lineItem edi:taxClass=\"exempt\">\n"
+        + "  </lineItem>\n"
+        + "</x>",
+            U.toXml((Map<String, Object>) U.fromJson(json)));
+        String json2 = "{\n  \":\": {\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<__HI__>\n</__HI__>",
+            U.toXml((Map<String, Object>) U.fromJson(json2)));
+        String json3 = "{\n  \"a:b\": {\n  }\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        + "<a__HI__b>\n</a__HI__b>",
+            U.toXml((Map<String, Object>) U.fromJson(json3)));
     }
 
     @SuppressWarnings("unchecked")

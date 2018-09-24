@@ -37,38 +37,11 @@ import java.util.function.Predicate;
 public class U<T> extends com.github.underscore.U<T> {
     private static final int DEFAULT_TRUNC_LENGTH = 30;
     private static final String DEFAULT_TRUNC_OMISSION = "...";
-    private static final String NULL = "null";
-    private static final String ELEMENT = "<element>";
-    private static final String CLOSED_ELEMENT = "</element>";
-    private static final String EMPTY_ELEMENT = ELEMENT + CLOSED_ELEMENT;
-    private static final String NULL_ELEMENT = ELEMENT + NULL + CLOSED_ELEMENT;
     private static final java.util.regex.Pattern RE_LATIN_1 = java.util.regex.Pattern.compile(
         "[\\xc0-\\xd6\\xd8-\\xde\\xdf-\\xf6\\xf8-\\xff]");
     private static final java.util.regex.Pattern RE_PROP_NAME = java.util.regex.Pattern.compile(
         "[^.\\[\\]]+|\\[(?:(-?\\d+(?:\\.\\d+)?)|([\"'])((?:(?!\2)\\[^\\]|\\.)*?)\2)\\]|(?=(\\.|\\[\\])(?:\4|$))");
-    private static final Map<String, String> DEBURRED_LETTERS = new LinkedHashMap<String, String>() { {
-        put("\u00c0", "A"); put("\u00c1", "A"); put("\u00c2", "A"); put("\u00c3", "A");
-        put("\u00c4", "A"); put("\u00c5", "A");
-        put("\u00e0", "a"); put("\u00e1", "a"); put("\u00e2", "a"); put("\u00e3", "a");
-        put("\u00e4", "a"); put("\u00e5", "a");
-        put("\u00c7", "C"); put("\u00e7", "c");
-        put("\u00d0", "D"); put("\u00f0", "d");
-        put("\u00c8", "E"); put("\u00c9", "E"); put("\u00ca", "E"); put("\u00cb", "E");
-        put("\u00e8", "e"); put("\u00e9", "e"); put("\u00ea", "e"); put("\u00eb", "e");
-        put("\u00cC", "I"); put("\u00cd", "I"); put("\u00ce", "I"); put("\u00cf", "I");
-        put("\u00eC", "i"); put("\u00ed", "i"); put("\u00ee", "i"); put("\u00ef", "i");
-        put("\u00d1", "N"); put("\u00f1", "n");
-        put("\u00d2", "O"); put("\u00d3", "O"); put("\u00d4", "O"); put("\u00d5", "O");
-        put("\u00d6", "O"); put("\u00d8", "O");
-        put("\u00f2", "o"); put("\u00f3", "o"); put("\u00f4", "o"); put("\u00f5", "o");
-        put("\u00f6", "o"); put("\u00f8", "o");
-        put("\u00d9", "U"); put("\u00da", "U"); put("\u00db", "U"); put("\u00dc", "U");
-        put("\u00f9", "u"); put("\u00fa", "u"); put("\u00fb", "u"); put("\u00fc", "u");
-        put("\u00dd", "Y"); put("\u00fd", "y"); put("\u00ff", "y");
-        put("\u00c6", "Ae"); put("\u00e6", "ae");
-        put("\u00de", "Th"); put("\u00fe", "th");
-        put("\u00df", "ss");
-    } };
+    private static final Map<String, String> DEBURRED_LETTERS = new LinkedHashMap<String, String>();
     private static final Map<String, List<String>> DEFAULT_HEADER_FIELDS = new HashMap<String, List<String>>();
     private static final Set<String> SUPPORTED_HTTP_METHODS = new HashSet<String>(
         Arrays.asList("GET", "POST", "PUT", "DELETE"));
@@ -80,6 +53,31 @@ public class U<T> extends com.github.underscore.U<T> {
         upper + "+(?=" + upper + lower + ")|" + upper + "?" + lower + "|" + upper + "+|[0-9]+");
 
     static {
+        String[] deburredLetters = new String[] {
+        "\u00c0", "A", "\u00c1", "A", "\u00c2", "A", "\u00c3", "A",
+        "\u00c4", "A", "\u00c5", "A",
+        "\u00e0", "a", "\u00e1", "a", "\u00e2", "a", "\u00e3", "a",
+        "\u00e4", "a", "\u00e5", "a",
+        "\u00c7", "C", "\u00e7", "c",
+        "\u00d0", "D", "\u00f0", "d",
+        "\u00c8", "E", "\u00c9", "E", "\u00ca", "E", "\u00cb", "E",
+        "\u00e8", "e", "\u00e9", "e", "\u00ea", "e", "\u00eb", "e",
+        "\u00cC", "I", "\u00cd", "I", "\u00ce", "I", "\u00cf", "I",
+        "\u00eC", "i", "\u00ed", "i", "\u00ee", "i", "\u00ef", "i",
+        "\u00d1", "N", "\u00f1", "n",
+        "\u00d2", "O", "\u00d3", "O", "\u00d4", "O", "\u00d5", "O",
+        "\u00d6", "O", "\u00d8", "O",
+        "\u00f2", "o", "\u00f3", "o", "\u00f4", "o", "\u00f5", "o",
+        "\u00f6", "o", "\u00f8", "o",
+        "\u00d9", "U", "\u00da", "U", "\u00db", "U", "\u00dc", "U",
+        "\u00f9", "u", "\u00fa", "u", "\u00fb", "u", "\u00fc", "u",
+        "\u00dd", "Y", "\u00fd", "y", "\u00ff", "y",
+        "\u00c6", "Ae", "\u00e6", "ae",
+        "\u00de", "Th", "\u00fe", "th",
+        "\u00df", "ss"};
+        for (int index = 0; index < deburredLetters.length; index += 2) {
+            DEBURRED_LETTERS.put(deburredLetters[index], deburredLetters[index + 1]);
+        }
         DEFAULT_HEADER_FIELDS.put("Content-Type", Arrays.asList("application/json", "charset=utf-8"));
     }
 
@@ -633,19 +631,19 @@ public class U<T> extends com.github.underscore.U<T> {
         }
 
         public Chain<String> toJson() {
-            return new Chain<String>(U.toJson((Collection) value()));
+            return new Chain<String>(Json.toJson((Collection) value()));
         }
 
         public Chain<Object> fromJson() {
-            return new Chain<Object>(U.fromJson((String) item()));
+            return new Chain<Object>(Json.fromJson((String) item()));
         }
 
         public Chain<String> toXml() {
-            return new Chain<String>(U.toXml((Collection) value()));
+            return new Chain<String>(Xml.toXml((Collection) value()));
         }
 
         public Chain<Object> fromXml() {
-            return new Chain<Object>(U.fromXml((String) item()));
+            return new Chain<Object>(Xml.fromXml((String) item()));
         }
 
         public Chain<String> fetch() {
@@ -662,7 +660,7 @@ public class U<T> extends com.github.underscore.U<T> {
         }
 
         public Chain<String> toJsonJavaString() {
-            return new Chain<String>(U.toJsonJavaString((Collection) value()));
+            return new Chain<String>(Json.toJsonJavaString((Collection) value()));
         }
     }
 
@@ -1123,8 +1121,8 @@ public class U<T> extends com.github.underscore.U<T> {
         final String localString = baseToString(string);
 
         final int length = localString.length();
-        final int localPosition = position == null ? length
-          : Math.min(position < 0 ? 0 : position, length);
+        final int fixedPosition = position == null || position < 0 ? 0 : position;
+        final int localPosition = position == null ? length : Math.min(fixedPosition, length);
 
         final int localPosition2 = localPosition - target.length();
       return localPosition2 >= 0 && localString.indexOf(target, localPosition2) == localPosition2;
@@ -1365,1910 +1363,6 @@ public class U<T> extends com.github.underscore.U<T> {
         return baseGet(object, path);
     }
 
-    public static class JsonStringBuilder {
-        private final StringBuilder builder;
-        private int ident;
-
-        public JsonStringBuilder() {
-            builder = new StringBuilder();
-        }
-
-        public JsonStringBuilder append(final char character) {
-            builder.append(character);
-            return this;
-        }
-
-        public JsonStringBuilder append(final String string) {
-            builder.append(string);
-            return this;
-        }
-
-        public JsonStringBuilder fillSpaces() {
-            for (int index = 0; index < ident; index += 1) {
-                builder.append(' ');
-            }
-            return this;
-        }
-
-        public JsonStringBuilder incIdent() {
-            ident += 2;
-            return this;
-        }
-
-        public JsonStringBuilder decIdent() {
-            ident -= 2;
-            return this;
-        }
-
-        public JsonStringBuilder newLine() {
-            builder.append("\n");
-            return this;
-        }
-
-        public String toString() {
-            return builder.toString();
-        }
-    }
-
-    public static class JsonArray {
-        public static void writeJson(Collection collection, JsonStringBuilder builder) {
-            if (collection == null) {
-                builder.append(NULL);
-                return;
-            }
-
-            Iterator iter = collection.iterator();
-
-            builder.append('[').incIdent();
-            if (!collection.isEmpty()) {
-                builder.newLine();
-            }
-            while (iter.hasNext()) {
-                Object value = iter.next();
-                if (value == null) {
-                    builder.fillSpaces().append(NULL);
-                    continue;
-                }
-
-                builder.fillSpaces();
-                JsonValue.writeJson(value, builder);
-                if (iter.hasNext()) {
-                    builder.append(',').newLine();
-                }
-            }
-            builder.newLine().decIdent().fillSpaces().append(']');
-        }
-
-        public static void writeJson(byte[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(short[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(int[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(long[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(float[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(double[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(boolean[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(char[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append('\"').append(String.valueOf(array[0])).append('\"');
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append('\"').append(String.valueOf(array[i])).append('\"');
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(Object[] array, JsonStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').newLine().incIdent().fillSpaces();
-                JsonValue.writeJson(array[0], builder);
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    JsonValue.writeJson(array[i], builder);
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-    }
-
-    public static class JsonObject {
-        public static void writeJson(Map map, JsonStringBuilder builder) {
-            if (map == null) {
-                builder.append(NULL);
-                return;
-            }
-
-            Iterator iter = map.entrySet().iterator();
-
-            builder.append('{').incIdent();
-            if (!map.isEmpty()) {
-                builder.newLine();
-            }
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                builder.fillSpaces().append('\"');
-                builder.append(JsonValue.unescapeName(String.valueOf(entry.getKey())));
-                builder.append('\"');
-                builder.append(':').append(' ');
-                JsonValue.writeJson(entry.getValue(), builder);
-                if (iter.hasNext()) {
-                    builder.append(',').newLine();
-                }
-            }
-            builder.newLine().decIdent().fillSpaces().append('}');
-        }
-    }
-
-    public static class JsonValue {
-        public static void writeJson(Object value, JsonStringBuilder builder) {
-            if (value == null) {
-                builder.append(NULL);
-            } else if (value instanceof String) {
-                builder.append('"').append(escape((String) value)).append('"');
-            } else if (value instanceof Double) {
-                if (((Double) value).isInfinite() || ((Double) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Float) {
-                if (((Float) value).isInfinite() || ((Float) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Number) {
-                builder.append(value.toString());
-            } else if (value instanceof Boolean) {
-                builder.append(value.toString());
-            } else if (value instanceof Map) {
-                JsonObject.writeJson((Map) value, builder);
-            } else if (value instanceof Collection) {
-                JsonArray.writeJson((Collection) value, builder);
-            } else if (value instanceof byte[]) {
-                JsonArray.writeJson((byte[]) value, builder);
-            } else if (value instanceof short[]) {
-                JsonArray.writeJson((short[]) value, builder);
-            } else if (value instanceof int[]) {
-                JsonArray.writeJson((int[]) value, builder);
-            } else if (value instanceof long[]) {
-                JsonArray.writeJson((long[]) value, builder);
-            } else if (value instanceof float[]) {
-                JsonArray.writeJson((float[]) value, builder);
-            } else if (value instanceof double[]) {
-                JsonArray.writeJson((double[]) value, builder);
-            } else if (value instanceof boolean[]) {
-                JsonArray.writeJson((boolean[]) value, builder);
-            } else if (value instanceof char[]) {
-                JsonArray.writeJson((char[]) value, builder);
-            } else if (value instanceof Object[]) {
-                JsonArray.writeJson((Object[]) value, builder);
-            } else {
-                builder.append(value.toString());
-            }
-        }
-
-        public static String unescapeName(final String name) {
-            final int length = name.length();
-            if (length == 0 || "__EE__EMPTY__EE__".equals(name)) {
-                return "";
-            }
-            if ("-__EE__EMPTY__EE__".equals(name)) {
-                return "-";
-            }
-            StringBuilder result = new StringBuilder();
-            int underlineCount = 0;
-            StringBuilder lastChars = new StringBuilder();
-            outer:
-            for (int i = 0; i < length; ++i) {
-                char ch = name.charAt(i);
-                if (ch == '_') {
-                    lastChars.append(ch);
-                } else {
-                    if (lastChars.length() == 2) {
-                        StringBuilder nameToDecode = new StringBuilder();
-                        for (int j = i; j < length; ++j) {
-                            if (name.charAt(j) == '_') {
-                                underlineCount += 1;
-                                if (underlineCount == 2) {
-                                    result.append(JsonValue.escape(Base32.decode(nameToDecode.toString())));
-                                    i = j;
-                                    underlineCount = 0;
-                                    lastChars.setLength(0);
-                                    continue outer;
-                                }
-                            } else {
-                                nameToDecode.append(name.charAt(j));
-                                underlineCount = 0;
-                            }
-                        }
-                    }
-                    result.append(lastChars).append(ch);
-                    lastChars.setLength(0);
-                }
-            }
-            return result.append(lastChars).toString();
-        }
-
-        public static String escape(String s) {
-            if (s == null) {
-                return null;
-            }
-            StringBuilder sb = new StringBuilder();
-            escape(s, sb);
-            return sb.toString();
-        }
-
-        private static void escape(String s, StringBuilder sb) {
-            final int len = s.length();
-            for (int i = 0; i < len; i++) {
-                char ch = s.charAt(i);
-                switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '/':
-                    sb.append("\\/");
-                    break;
-                default:
-                    if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
-                        || ch >= '\u2000' && ch <= '\u20FF') {
-                        String ss = Integer.toHexString(ch);
-                        sb.append("\\u");
-                        for (int k = 0; k < 4 - ss.length(); k++) {
-                            sb.append('0');
-                        }
-                        sb.append(ss.toUpperCase());
-                    } else {
-                        sb.append(ch);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    public static String toJson(Collection collection) {
-        final JsonStringBuilder builder = new JsonStringBuilder();
-
-        JsonArray.writeJson(collection, builder);
-        return builder.toString();
-    }
-
-    public String toJson() {
-        return toJson((Collection) getIterable());
-    }
-
-    public static String toJson(Map map) {
-        final JsonStringBuilder builder = new JsonStringBuilder();
-
-        JsonObject.writeJson(map, builder);
-        return builder.toString();
-    }
-
-    public static class XmlStringBuilder {
-        public enum Step {
-            TWO_SPACES, THREE_SPACES, FOUR_SPACES, COMPACT, TABS;
-            public int getIdent() {
-                final int result;
-                if (this == TWO_SPACES) {
-                    result = 2;
-                } else if (this == THREE_SPACES) {
-                    result = 3;
-                } else if (this == FOUR_SPACES) {
-                    result = 4;
-                } else if (this == TABS) {
-                    result = 1;
-                } else {
-                    result = 0;
-                }
-                return result;
-            }
-        }
-
-        protected final StringBuilder builder;
-        private final Step identStep;
-        private int ident;
-
-        public XmlStringBuilder() {
-            builder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n");
-            identStep = Step.TWO_SPACES;
-            ident = 2;
-        }
-
-        public XmlStringBuilder(StringBuilder builder, Step identStep, int ident) {
-            this.builder = builder;
-            this.identStep = identStep;
-            this.ident = ident;
-        }
-
-        public XmlStringBuilder append(final String string) {
-            builder.append(string);
-            return this;
-        }
-
-        public XmlStringBuilder fillSpaces() {
-            for (int index = 0; index < ident; index += 1) {
-                builder.append(identStep == Step.TABS ? '\t' : ' ');
-            }
-            return this;
-        }
-
-        public XmlStringBuilder incIdent() {
-            ident += identStep.getIdent();
-            return this;
-        }
-
-        public XmlStringBuilder decIdent() {
-            ident -= identStep.getIdent();
-            return this;
-        }
-
-        public XmlStringBuilder newLine() {
-            if (identStep != Step.COMPACT) {
-                builder.append("\n");
-            }
-            return this;
-        }
-
-        public int getIdent() {
-            return ident;
-        }
-
-        public Step getIdentStep() {
-            return identStep;
-        }
-
-        public String toString() {
-            return builder.toString() + "\n</root>";
-        }
-    }
-
-    public static class XmlStringBuilderWithoutRoot extends XmlStringBuilder {
-        public XmlStringBuilderWithoutRoot(XmlStringBuilder.Step identStep) {
-            super(new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"), identStep, 0);
-        }
-
-        public String toString() {
-            return builder.toString();
-        }
-    }
-
-    public static class XmlStringBuilderWithoutHeader extends XmlStringBuilder {
-        public XmlStringBuilderWithoutHeader(XmlStringBuilder.Step identStep, int ident) {
-            super(new StringBuilder(), identStep, ident);
-        }
-
-        public String toString() {
-            return builder.toString();
-        }
-    }
-
-    public static class XmlArray {
-        public static void writeXml(Collection collection, String name, XmlStringBuilder builder,
-            boolean parentTextFound, Set<String> namespaces) {
-            if (collection == null) {
-                builder.append(NULL);
-                return;
-            }
-
-            if (name != null) {
-                builder.fillSpaces().append("<").append(XmlValue.escapeName(name, namespaces)).append(">").incIdent();
-                if (!collection.isEmpty()) {
-                    builder.newLine();
-                }
-            }
-            writeXml(collection, builder, name, parentTextFound, namespaces);
-            if (name != null) {
-                builder.decIdent().newLine().fillSpaces().append("</")
-                        .append(XmlValue.escapeName(name, namespaces)).append(">");
-            }
-        }
-
-        private static void writeXml(Collection collection, XmlStringBuilder builder, String name,
-            boolean parentTextFound, Set<String> namespaces) {
-            Iterator iter = collection.iterator();
-            while (iter.hasNext()) {
-                Object value = iter.next();
-                if (value == null) {
-                    builder.fillSpaces()
-                            .append("<" + (name == null ? "element" : XmlValue.escapeName(name, namespaces)) + ">"
-                            + NULL + "</" + (name == null ? "element" : XmlValue.escapeName(name, namespaces)) + ">");
-                } else {
-                    XmlValue.writeXml(value, name == null ? "element" : name, builder, parentTextFound,
-                        namespaces);
-                    parentTextFound = false;
-                }
-                if (iter.hasNext()) {
-                    builder.newLine();
-                }
-            }
-        }
-
-        public static void writeXml(byte[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(short[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(int[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(long[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(float[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(double[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(boolean[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(char[] array, XmlStringBuilder builder) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    builder.fillSpaces().append(ELEMENT);
-                    builder.append(String.valueOf(array[i]));
-                    builder.append(CLOSED_ELEMENT);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-
-        public static void writeXml(Object[] array, String name, XmlStringBuilder builder, boolean parentTextFound,
-                Set<String> namespaces) {
-            if (array == null) {
-                builder.fillSpaces().append(NULL_ELEMENT);
-            } else if (array.length == 0) {
-                builder.fillSpaces().append(EMPTY_ELEMENT);
-            } else {
-                for (int i = 0; i < array.length; i++) {
-                    XmlValue.writeXml(array[i], name == null ? "element" : name, builder, parentTextFound, namespaces);
-                    if (i != array.length - 1) {
-                        builder.newLine();
-                    }
-                }
-            }
-        }
-    }
-
-    public static class XmlObject {
-        @SuppressWarnings("unchecked")
-        public static void writeXml(Map map, String name, XmlStringBuilder builder, boolean parentTextFound,
-            Set<String> namespaces) {
-            if (map == null) {
-                XmlValue.writeXml(NULL, name, builder, false, namespaces);
-                return;
-            }
-
-            final List<XmlStringBuilder> elems = newArrayList();
-            final List<XmlStringBuilder> textElems = newArrayList();
-            final List<String> attrs = newArrayList();
-            final XmlStringBuilder.Step identStep = builder.getIdentStep();
-            final int ident = builder.getIdent() + (name == null ? 0 : builder.getIdentStep().getIdent());
-            boolean textFoundSave = false;
-            final List<Map.Entry> entries = newArrayList(map.entrySet());
-            for (int index = 0; index < entries.size(); index += 1) {
-                Map.Entry entry = entries.get(index);
-                final boolean addNewLine = index < entries.size() - 1
-                    && !"#text".equals(String.valueOf(entries.get(index + 1).getKey()));
-                if (String.valueOf(entry.getKey()).startsWith("-") && !(entry.getValue() instanceof Map)
-                    && !(entry.getValue() instanceof List)) {
-                    attrs.add(" " + XmlValue.escapeName(String.valueOf(entry.getKey()).substring(1), namespaces)
-                        + "=\"" + escape(String.valueOf(entry.getValue())) + "\"");
-                    if (String.valueOf(entry.getKey()).startsWith("-xmlns:")) {
-                        namespaces.add(String.valueOf(entry.getKey()).substring(7));
-                    }
-                } else if ("#text".equals(escape(String.valueOf(entry.getKey())))) {
-                    if (elems.isEmpty()) {
-                        textFoundSave = true;
-                    }
-                    if (entry.getValue() instanceof List) {
-                        for (Object value : (List) entry.getValue()) {
-                            textElems.add(new XmlStringBuilderWithoutHeader(identStep, ident).append(escape((String) value)));
-                        }
-                    } else {
-                        textElems.add(new XmlStringBuilderWithoutHeader(identStep, ident).append(
-                            escape((String) entry.getValue())));
-                    }
-                } else if ("#comment".equals(escape(String.valueOf(entry.getKey())))) {
-                    addComment(entry, identStep, ident, addNewLine, elems, "<!--", "-->");
-                } else if ("#cdata-section".equals(escape(String.valueOf(entry.getKey())))) {
-                    addComment(entry, identStep, ident, addNewLine, elems, "<![CDATA[", "]]>");
-                } else if (entry.getValue() instanceof List && !((List) entry.getValue()).isEmpty()) {
-                    XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident);
-                    XmlArray.writeXml((List) entry.getValue(), localBuilder,
-                        String.valueOf(entry.getKey()), !textElems.isEmpty(), namespaces);
-                    if (addNewLine) {
-                        localBuilder.newLine();
-                    }
-                    if (!textElems.isEmpty()) {
-                        elems.add(textElems.remove(0));
-                    }
-                    elems.add(localBuilder);
-                } else {
-                    XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident);
-                    XmlValue.writeXml(entry.getValue(), String.valueOf(entry.getKey()),
-                            localBuilder, !textElems.isEmpty(), namespaces);
-                    if (!textElems.isEmpty()) {
-                        elems.add(textElems.remove(0));
-                    }
-                    if (addNewLine && textElems.isEmpty()) {
-                        localBuilder.newLine();
-                    }
-                    elems.add(localBuilder);
-                }
-            }
-            for (XmlStringBuilder localBuilder : textElems) {
-                elems.add(localBuilder);
-            }
-            if (name != null) {
-                if (!parentTextFound) {
-                    builder.fillSpaces();
-                }
-                builder.append("<").append(XmlValue.escapeName(name, namespaces))
-                        .append(U.join(attrs, "")).append(">").incIdent();
-                if (!textFoundSave && !elems.isEmpty()) {
-                    builder.newLine();
-                }
-            }
-            for (XmlStringBuilder localBuilder : elems) {
-                builder.append(localBuilder.toString());
-            }
-            if (name != null) {
-                builder.decIdent();
-                if (textElems.isEmpty()) {
-                    builder.newLine().fillSpaces();
-                }
-                builder.append("</").append(XmlValue.escapeName(name, namespaces)).append(">");
-            }
-        }
-
-        private static void addComment(Map.Entry entry, XmlStringBuilder.Step identStep, int ident, boolean addNewLine,
-                List<XmlStringBuilder> elems, String openElement, String closeElement) {
-            if (entry.getValue() instanceof List) {
-                for (Iterator iterator = ((List) entry.getValue()).iterator(); iterator.hasNext(); ) {
-                    addCommentValue(identStep, ident, (String) iterator.next(),
-                            iterator.hasNext() || addNewLine, elems, openElement, closeElement);
-                }
-            } else {
-                addCommentValue(identStep, ident, (String) entry.getValue(), addNewLine, elems,
-                        openElement, closeElement);
-            }
-        }
-
-        private static void addCommentValue(XmlStringBuilder.Step identStep, int ident, String value, boolean addNewLine,
-                List<XmlStringBuilder> elems, String openElement, String closeElement) {
-            XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident)
-                    .fillSpaces().append(openElement).append(value).append(closeElement);
-            if (addNewLine) {
-                localBuilder.newLine();
-            }
-            elems.add(localBuilder);
-        }
-    }
-
-    public static class XmlValue {
-        public static void writeXml(Object value, String name, XmlStringBuilder builder, boolean parentTextFound,
-            Set<String> namespaces) {
-            if (value instanceof Map) {
-                XmlObject.writeXml((Map) value,  name, builder, parentTextFound, namespaces);
-                return;
-            }
-            if (value instanceof Collection) {
-                XmlArray.writeXml((Collection) value, name, builder, parentTextFound, namespaces);
-                return;
-            }
-            if (!parentTextFound) {
-                builder.fillSpaces();
-            }
-            builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
-            if (value == null) {
-                builder.append(NULL);
-            } else if (value instanceof String) {
-                builder.append(escape((String) value));
-            } else if (value instanceof Double) {
-                if (((Double) value).isInfinite() || ((Double) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Float) {
-                if (((Float) value).isInfinite() || ((Float) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Number) {
-                builder.append(value.toString());
-            } else if (value instanceof Boolean) {
-                builder.append(value.toString());
-            } else if (value instanceof byte[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((byte[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof short[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((short[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof int[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((int[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof long[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((long[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof float[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((float[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof double[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((double[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof boolean[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((boolean[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof char[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((char[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof Object[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((Object[]) value, name, builder, parentTextFound, namespaces);
-                builder.decIdent().newLine().fillSpaces();
-            } else {
-                builder.append(value.toString());
-            }
-            builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
-        }
-
-        public static String escapeName(String name, Set<String> namespaces) {
-            final int length = name.length();
-            if (length == 0) {
-                return "__EE__EMPTY__EE__";
-            }
-            final StringBuilder result = new StringBuilder();
-            char ch = name.charAt(0);
-            if (com.sun.org.apache.xerces.internal.util.XMLChar.isNameStart(ch) && ch != ':') {
-                result.append(ch);
-            } else {
-                result.append("__").append(Base32.encode(Character.toString(ch))).append("__");
-            }
-            for (int i = 1; i < length; ++i) {
-                ch = name.charAt(i);
-                if (ch == ':' && ("xmlns".equals(name.substring(0, i))
-                        || namespaces.contains(name.substring(0, i)))) {
-                    result.append(ch);
-                } else if (com.sun.org.apache.xerces.internal.util.XMLChar.isName(ch) && ch != ':') {
-                    result.append(ch);
-                } else {
-                    result.append("__").append(Base32.encode(Character.toString(ch))).append("__");
-                }
-            }
-            return result.toString();
-        }
-
-        public static String escape(String s) {
-            if (s == null) {
-                return null;
-            }
-            StringBuilder sb = new StringBuilder();
-            escape(s, sb);
-            return sb.toString();
-        }
-
-        private static void escape(String s, StringBuilder sb) {
-            final int len = s.length();
-            for (int i = 0; i < len; i++) {
-                char ch = s.charAt(i);
-                switch (ch) {
-                case '"':
-                    sb.append("&quot;");
-                    break;
-                case '\'':
-                    sb.append("&apos;");
-                    break;
-                case '&':
-                    sb.append("&amp;");
-                    break;
-                case '<':
-                    sb.append("&lt;");
-                    break;
-                case '>':
-                    sb.append("&gt;");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
-                        || ch >= '\u2000' && ch <= '\u20FF') {
-                        String ss = Integer.toHexString(ch);
-                        sb.append("&#x");
-                        for (int k = 0; k < 4 - ss.length(); k++) {
-                            sb.append('0');
-                        }
-                        sb.append(ss.toUpperCase()).append(";");
-                    } else {
-                        sb.append(ch);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    public static String toXml(Collection collection, XmlStringBuilder.Step identStep) {
-        final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep);
-        builder.append("<root>").incIdent();
-        if (collection == null || !collection.isEmpty()) {
-            builder.newLine();
-        }
-        XmlArray.writeXml(collection, null, builder, false, U.<String>newLinkedHashSet());
-        return builder.newLine().append("</root>").toString();
-    }
-
-    public static String toXml(Collection collection) {
-        return toXml(collection, XmlStringBuilder.Step.TWO_SPACES);
-    }
-
-    public String toXml() {
-        return toXml((Collection) getIterable());
-    }
-
-    public static String toXml(Map map, XmlStringBuilder.Step identStep) {
-        final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep);
-        if (map == null || map.size() != 1
-            || ((String) ((Map.Entry) map.entrySet().iterator().next()).getKey()).startsWith("-")
-            || ((Map.Entry) map.entrySet().iterator().next()).getValue() instanceof List) {
-            XmlObject.writeXml(map, "root", builder, false, U.<String>newLinkedHashSet());
-        } else {
-            XmlObject.writeXml(map, null, builder, false, U.<String>newLinkedHashSet());
-        }
-        return builder.toString();
-    }
-
-    public static String toXml(Map map) {
-        return toXml(map, XmlStringBuilder.Step.TWO_SPACES);
-    }
-
-    public static class ParseException extends RuntimeException {
-        private final int offset;
-        private final int line;
-        private final int column;
-
-        public ParseException(String message, int offset, int line, int column) {
-            super(message + " at " + line + ":" + column);
-            this.offset = offset;
-            this.line = line;
-            this.column = column;
-        }
-
-        public int getOffset() {
-            return offset;
-        }
-
-        public int getLine() {
-            return line;
-        }
-
-        public int getColumn() {
-            return column;
-        }
-    }
-
-    public static class JsonParser {
-        private final String json;
-        private int index;
-        private int line;
-        private int lineOffset;
-        private int current;
-        private StringBuilder captureBuffer;
-        private int captureStart;
-
-        public JsonParser(String string) {
-            this.json = string;
-            line = 1;
-            captureStart = -1;
-        }
-
-        public Object parse() {
-            read();
-            skipWhiteSpace();
-            final Object result = readValue();
-            skipWhiteSpace();
-            if (!isEndOfText()) {
-                throw error("Unexpected character");
-            }
-            return result;
-        }
-
-        private Object readValue() {
-            switch (current) {
-            case 'n':
-                return readNull();
-            case 't':
-                return readTrue();
-            case 'f':
-                return readFalse();
-            case '"':
-                return readString();
-            case '[':
-                return readArray();
-            case '{':
-                return readObject();
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                return readNumber();
-            default:
-                throw expected("value");
-            }
-        }
-
-        private List<Object> readArray() {
-            read();
-            List<Object> array = newArrayList();
-            skipWhiteSpace();
-            if (readChar(']')) {
-                return array;
-            }
-            do {
-                skipWhiteSpace();
-                array.add(readValue());
-                skipWhiteSpace();
-            } while (readChar(','));
-            if (!readChar(']')) {
-                throw expected("',' or ']'");
-            }
-            return array;
-        }
-
-        private Map<String, Object> readObject() {
-            read();
-            Map<String, Object> object = newLinkedHashMap();
-            skipWhiteSpace();
-            if (readChar('}')) {
-                return object;
-            }
-            do {
-                skipWhiteSpace();
-                String name = readName();
-                skipWhiteSpace();
-                if (!readChar(':')) {
-                    throw expected("':'");
-                }
-                skipWhiteSpace();
-                object.put(name, readValue());
-                skipWhiteSpace();
-            } while (readChar(','));
-            if (!readChar('}')) {
-                throw expected("',' or '}'");
-            }
-            return object;
-        }
-
-        private String readName() {
-            if (current != '"') {
-                throw expected("name");
-            }
-            return readString();
-        }
-
-        private String readNull() {
-            read();
-            readRequiredChar('u');
-            readRequiredChar('l');
-            readRequiredChar('l');
-            return null;
-        }
-
-        private Boolean readTrue() {
-            read();
-            readRequiredChar('r');
-            readRequiredChar('u');
-            readRequiredChar('e');
-            return Boolean.TRUE;
-        }
-
-        private Boolean readFalse() {
-            read();
-            readRequiredChar('a');
-            readRequiredChar('l');
-            readRequiredChar('s');
-            readRequiredChar('e');
-            return Boolean.FALSE;
-        }
-
-        private void readRequiredChar(char ch) {
-            if (!readChar(ch)) {
-                throw expected("'" + ch + "'");
-            }
-        }
-
-        private String readString() {
-            read();
-            startCapture();
-            while (current != '"') {
-                if (current == '\\') {
-                    pauseCapture();
-                    readEscape();
-                    startCapture();
-                } else if (current < 0x20) {
-                    throw expected("valid string character");
-                } else {
-                    read();
-                }
-            }
-            String string = endCapture();
-            read();
-            return string;
-        }
-
-        private void readEscape() {
-            read();
-            switch (current) {
-            case '"':
-            case '/':
-            case '\\':
-                captureBuffer.append((char) current);
-                break;
-            case 'b':
-                captureBuffer.append('\b');
-                break;
-            case 'f':
-                captureBuffer.append('\f');
-                break;
-            case 'n':
-                captureBuffer.append('\n');
-                break;
-            case 'r':
-                captureBuffer.append('\r');
-                break;
-            case 't':
-                captureBuffer.append('\t');
-                break;
-            case 'u':
-                char[] hexChars = new char[4];
-                boolean isHexCharsDigits = true;
-                for (int i = 0; i < 4; i++) {
-                    read();
-                    if (!isHexDigit()) {
-                        isHexCharsDigits = false;
-                    }
-                    hexChars[i] = (char) current;
-                }
-                if (isHexCharsDigits) {
-                    captureBuffer.append((char) Integer.parseInt(new String(hexChars), 16));
-                } else {
-                    captureBuffer.append("\\u").append(hexChars[0]).append(hexChars[1]).append(hexChars[2])
-                        .append(hexChars[3]);
-                }
-                break;
-            default:
-                throw expected("valid escape sequence");
-            }
-            read();
-        }
-
-        private Number readNumber() {
-            startCapture();
-            readChar('-');
-            int firstDigit = current;
-            if (!readDigit()) {
-                throw expected("digit");
-            }
-            if (firstDigit != '0') {
-                while (readDigit()) {
-                }
-            }
-            readFraction();
-            readExponent();
-            final String number = endCapture();
-            if (number.contains(".") || number.contains("e") || number.contains("E")) {
-                return Double.valueOf(number);
-            } else {
-                return Long.valueOf(number);
-            }
-        }
-
-        private boolean readFraction() {
-            if (!readChar('.')) {
-                return false;
-            }
-            if (!readDigit()) {
-                throw expected("digit");
-            }
-            while (readDigit()) {
-            }
-            return true;
-        }
-
-        private boolean readExponent() {
-            if (!readChar('e') && !readChar('E')) {
-                return false;
-            }
-            if (!readChar('+')) {
-                readChar('-');
-            }
-            if (!readDigit()) {
-                throw expected("digit");
-            }
-            while (readDigit()) {
-            }
-            return true;
-        }
-
-        private boolean readChar(char ch) {
-            if (current != ch) {
-                return false;
-            }
-            read();
-            return true;
-        }
-
-        private boolean readDigit() {
-            if (!isDigit()) {
-                return false;
-            }
-            read();
-            return true;
-        }
-
-        private void skipWhiteSpace() {
-            while (isWhiteSpace()) {
-                read();
-            }
-        }
-
-        private void read() {
-            if (index == json.length()) {
-                current = -1;
-                return;
-            }
-            if (current == '\n') {
-                line++;
-                lineOffset = index;
-            }
-            current = json.charAt(index++);
-        }
-
-        private void startCapture() {
-            if (captureBuffer == null) {
-                captureBuffer = new StringBuilder();
-            }
-            captureStart = index - 1;
-        }
-
-        private void pauseCapture() {
-            captureBuffer.append(json.substring(captureStart, index - 1));
-            captureStart = -1;
-        }
-
-        private String endCapture() {
-            int end = current == -1 ? index : index - 1;
-            String captured;
-            if (captureBuffer.length() > 0) {
-                captureBuffer.append(json.substring(captureStart, end));
-                captured = captureBuffer.toString();
-                captureBuffer.setLength(0);
-            } else {
-                captured = json.substring(captureStart, end);
-            }
-            captureStart = -1;
-            return captured;
-        }
-
-        private ParseException expected(String expected) {
-            if (isEndOfText()) {
-                return error("Unexpected end of input");
-            }
-            return error("Expected " + expected);
-        }
-
-        private ParseException error(String message) {
-            int absIndex = index;
-            int column = absIndex - lineOffset;
-            int offset = isEndOfText() ? absIndex : absIndex - 1;
-            return new ParseException(message, offset, line, column - 1);
-        }
-
-        private boolean isWhiteSpace() {
-            return current == ' ' || current == '\t' || current == '\n' || current == '\r';
-        }
-
-        private boolean isDigit() {
-            return current >= '0' && current <= '9';
-        }
-
-        private boolean isHexDigit() {
-            return isDigit() || current >= 'a' && current <= 'f' || current >= 'A'
-                    && current <= 'F';
-        }
-
-        private boolean isEndOfText() {
-            return current == -1;
-        }
-
-    }
-
-    public static Object fromJson(String string) {
-        return new JsonParser(string).parse();
-    }
-
-    public Object fromJson() {
-        return fromJson(getString().get());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Object getValue(final Object value) {
-        if (value instanceof Map && ((Map<String, Object>) value).entrySet().size() == 1) {
-            final Map.Entry<String, Object> entry = ((Map<String, Object>) value).entrySet().iterator().next();
-            if (entry.getKey().equals("#text") || entry.getKey().equals("element")) {
-                return entry.getValue();
-            }
-        }
-        return value;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> createMap(final org.w3c.dom.Node node,
-        final Function<Object, Object> nodeMapper, Map<String, Object> attrMap) {
-        final Map<String, Object> map = newLinkedHashMap();
-        map.putAll(attrMap);
-        final org.w3c.dom.NodeList nodeList = node.getChildNodes();
-        for (int index = 0; index < nodeList.getLength(); index++) {
-            final org.w3c.dom.Node currentNode = nodeList.item(index);
-            final String name = currentNode.getNodeName();
-            final Object value;
-            final int attributesLength = currentNode.getAttributes() == null
-                    ? 0 : currentNode.getAttributes().getLength();
-            if (currentNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
-                final Map<String, Object> attrMapLocal = newLinkedHashMap();
-                for (int indexAttr = 0; indexAttr < attributesLength; indexAttr += 1) {
-                    final org.w3c.dom.Node currentNodeAttr = currentNode.getAttributes().item(indexAttr);
-                    addNodeValue(attrMapLocal, '-' + currentNodeAttr.getNodeName(),
-                            currentNodeAttr.getTextContent(), nodeMapper);
-                }
-                value = createMap(currentNode, nodeMapper, attrMapLocal);
-            } else {
-                value = currentNode.getTextContent();
-            }
-            if ("#text".equals(name) && value.toString().trim().isEmpty()) {
-                continue;
-            }
-            addNodeValue(map, name, value, nodeMapper);
-        }
-        return map;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void addNodeValue(final Map<String, Object> map, final String name, final Object value,
-            final Function<Object, Object> nodeMapper) {
-        if (map.containsKey(name)) {
-            final Object object = map.get(name);
-            if (object instanceof List) {
-                ((List<Object>) object).add(getValue(value));
-            } else {
-                final List<Object> objects = newArrayList();
-                objects.add(object);
-                objects.add(getValue(value));
-                map.put(name, objects);
-            }
-        } else {
-            map.put(name, nodeMapper.apply(getValue(value)));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Object fromXml(final String xml) {
-        if (xml == null) {
-            return null;
-        }
-        try {
-            final java.io.InputStream stream = new java.io.ByteArrayInputStream(xml.getBytes("UTF-8"));
-            final javax.xml.parsers.DocumentBuilderFactory factory =
-                javax.xml.parsers.DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            final org.w3c.dom.Document document = factory.newDocumentBuilder().parse(stream);
-            final Object result = createMap(document, new Function<Object, Object>() {
-                public Object apply(Object object) {
-                    return object;
-                }
-            }, Collections.<String, Object>emptyMap());
-            if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
-                && (((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof List
-                || ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof Map)) {
-                return ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue();
-            }
-            return result;
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
-
-    public static Object fromXmlMakeArrays(final String xml) {
-        try {
-            final java.io.InputStream stream = new java.io.ByteArrayInputStream(xml.getBytes("UTF-8"));
-            final javax.xml.parsers.DocumentBuilderFactory factory =
-                javax.xml.parsers.DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            final org.w3c.dom.Document document = factory.newDocumentBuilder().parse(stream);
-            return createMap(document, new Function<Object, Object>() {
-                public Object apply(Object object) {
-                    return object instanceof List ? object : newArrayList(Arrays.asList(object));
-                }
-            }, Collections.<String, Object>emptyMap());
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
-
-    public Object fromXml() {
-        return fromXml(getString().get());
-    }
-
-    public static class JsonJavaStringBuilder {
-        private final StringBuilder builder;
-        private int ident;
-
-        public JsonJavaStringBuilder() {
-            builder = new StringBuilder("\"");
-        }
-
-        public JsonJavaStringBuilder append(final char character) {
-            builder.append(character);
-            return this;
-        }
-
-        public JsonJavaStringBuilder append(final String string) {
-            builder.append(string);
-            return this;
-        }
-
-        public JsonJavaStringBuilder fillSpaces() {
-            for (int index = 0; index < ident; index += 1) {
-                builder.append(' ');
-            }
-            return this;
-        }
-
-        public JsonJavaStringBuilder incIdent() {
-            ident += 2;
-            return this;
-        }
-
-        public JsonJavaStringBuilder decIdent() {
-            ident -= 2;
-            return this;
-        }
-
-        public JsonJavaStringBuilder newLine() {
-            builder.append("\\n\"\n + \"");
-            return this;
-        }
-
-        public String toString() {
-            return builder.toString() + "\";";
-        }
-    }
-
-    public static class JsonJavaArray {
-        public static void writeJson(Collection collection, JsonJavaStringBuilder builder) {
-            if (collection == null) {
-                builder.append(NULL);
-                return;
-            }
-
-            Iterator iter = collection.iterator();
-
-            builder.append('[').incIdent().newLine();
-            while (iter.hasNext()) {
-                Object value = iter.next();
-                if (value == null) {
-                    builder.fillSpaces().append(NULL);
-                    continue;
-                }
-
-                builder.fillSpaces();
-                JsonJavaValue.writeJson(value, builder);
-                if (iter.hasNext()) {
-                    builder.append(',').newLine();
-                }
-            }
-            builder.newLine().decIdent().fillSpaces().append(']');
-        }
-
-        public static void writeJson(byte[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(short[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(int[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(long[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(float[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(double[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(boolean[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append(String.valueOf(array[0]));
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append(String.valueOf(array[i]));
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(char[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').incIdent().newLine();
-                builder.fillSpaces().append('\"').append(String.valueOf(array[0])).append('\"');
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    builder.append('\"').append(String.valueOf(array[i])).append('\"');
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-
-        public static void writeJson(Object[] array, JsonJavaStringBuilder builder) {
-            if (array == null) {
-                builder.append(NULL);
-            } else if (array.length == 0) {
-                builder.append("[]");
-            } else {
-                builder.append('[').newLine().incIdent().fillSpaces();
-                JsonJavaValue.writeJson(array[0], builder);
-
-                for (int i = 1; i < array.length; i++) {
-                    builder.append(',').newLine().fillSpaces();
-                    JsonJavaValue.writeJson(array[i], builder);
-                }
-
-                builder.newLine().decIdent().fillSpaces().append(']');
-            }
-        }
-    }
-
-    public static class JsonJavaObject {
-        public static void writeJson(Map map, JsonJavaStringBuilder builder) {
-            if (map == null) {
-                builder.append(NULL);
-                return;
-            }
-
-            Iterator iter = map.entrySet().iterator();
-
-            builder.append('{').newLine().incIdent();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                builder.fillSpaces().append("\\\"");
-                builder.append(escape(String.valueOf(entry.getKey())));
-                builder.append("\\\"");
-                builder.append(':').append(' ');
-                JsonJavaValue.writeJson(entry.getValue(), builder);
-                if (iter.hasNext()) {
-                    builder.append(',').newLine();
-                }
-            }
-            builder.newLine().decIdent().fillSpaces().append('}');
-        }
-    }
-
-    public static class JsonJavaValue {
-        public static void writeJson(Object value, JsonJavaStringBuilder builder) {
-            if (value == null) {
-                builder.append(NULL);
-            } else if (value instanceof String) {
-                builder.append("\\\"").append(escape((String) value)).append("\\\"");
-            } else if (value instanceof Double) {
-                if (((Double) value).isInfinite() || ((Double) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Float) {
-                if (((Float) value).isInfinite() || ((Float) value).isNaN()) {
-                    builder.append(NULL);
-                } else {
-                    builder.append(value.toString());
-                }
-            } else if (value instanceof Number) {
-                builder.append(value.toString());
-            } else if (value instanceof Boolean) {
-                builder.append(value.toString());
-            } else if (value instanceof Map) {
-                JsonJavaObject.writeJson((Map) value, builder);
-            } else if (value instanceof Collection) {
-                JsonJavaArray.writeJson((Collection) value, builder);
-            } else if (value instanceof byte[]) {
-                JsonJavaArray.writeJson((byte[]) value, builder);
-            } else if (value instanceof short[]) {
-                JsonJavaArray.writeJson((short[]) value, builder);
-            } else if (value instanceof int[]) {
-                JsonJavaArray.writeJson((int[]) value, builder);
-            } else if (value instanceof long[]) {
-                JsonJavaArray.writeJson((long[]) value, builder);
-            } else if (value instanceof float[]) {
-                JsonJavaArray.writeJson((float[]) value, builder);
-            } else if (value instanceof double[]) {
-                JsonJavaArray.writeJson((double[]) value, builder);
-            } else if (value instanceof boolean[]) {
-                JsonJavaArray.writeJson((boolean[]) value, builder);
-            } else if (value instanceof char[]) {
-                JsonJavaArray.writeJson((char[]) value, builder);
-            } else if (value instanceof Object[]) {
-                JsonJavaArray.writeJson((Object[]) value, builder);
-            } else {
-                builder.append(value.toString());
-            }
-        }
-
-        public static String escape(String s) {
-            if (s == null) {
-                return null;
-            }
-            StringBuilder sb = new StringBuilder();
-            escape(s, sb);
-            return sb.toString();
-        }
-
-        private static void escape(String s, StringBuilder sb) {
-            final int len = s.length();
-            for (int i = 0; i < len; i++) {
-                char ch = s.charAt(i);
-                switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '/':
-                    sb.append("\\/");
-                    break;
-                default:
-                    if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
-                        || ch >= '\u2000' && ch <= '\u20FF') {
-                        String ss = Integer.toHexString(ch);
-                        sb.append("\\u");
-                        for (int k = 0; k < 4 - ss.length(); k++) {
-                            sb.append('0');
-                        }
-                        sb.append(ss.toUpperCase());
-                    } else {
-                        sb.append(ch);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
-    public static String toJsonJavaString(Collection collection) {
-        final JsonJavaStringBuilder builder = new JsonJavaStringBuilder();
-
-        JsonJavaArray.writeJson(collection, builder);
-        return builder.toString();
-    }
-
-    public String toJsonJavaString() {
-        return toJsonJavaString((Collection) getIterable());
-    }
-
-
-    public static String toJsonJavaString(Map map) {
-        final JsonJavaStringBuilder builder = new JsonJavaStringBuilder();
-
-        JsonJavaObject.writeJson(map, builder);
-        return builder.toString();
-    }
-
     public static class FetchResponse {
         private final boolean ok;
         private final int status;
@@ -3308,11 +1402,11 @@ public class U<T> extends com.github.underscore.U<T> {
         }
 
         public Object json() {
-            return U.fromJson(text());
+            return Json.fromJson(text());
         }
 
         public Object xml() {
-            return U.fromXml(text());
+            return Xml.fromXml(text());
         }
     }
 
@@ -3359,12 +1453,12 @@ public class U<T> extends com.github.underscore.U<T> {
 
         @Override
         public String[] getSupportedCipherSuites() {
-            return null;
+            return new String[]{};
         }
 
         @Override
         public String[] getDefaultCipherSuites() {
-            return null;
+            return new String[]{};
         }
 
         @Override
@@ -3392,7 +1486,7 @@ public class U<T> extends com.github.underscore.U<T> {
             }
 
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
+                return new java.security.cert.X509Certificate[]{};
             }
 
             public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
@@ -3643,42 +1737,111 @@ public class U<T> extends com.github.underscore.U<T> {
     }
 
     @SuppressWarnings("unchecked")
+    protected static <T> List<T> newArrayList() {
+        return com.github.underscore.U.newArrayList();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected static <T> List<T> newArrayList(final Iterable<T> iterable) {
+        return com.github.underscore.U.newArrayList(iterable);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected static <T> Set<T> newLinkedHashSet() {
+        return com.github.underscore.U.newLinkedHashSet();
+    }
+
+    protected static <K, E> Map<K, E> newLinkedHashMap() {
+        return com.github.underscore.U.newLinkedHashMap();
+    }
+
+    public static String toJson(Collection collection) {
+        return Json.toJson(collection);
+    }
+
+    public static String toJson(Map map) {
+        return Json.toJson(map);
+    }
+
+    public String toJson() {
+        return Json.toJson((Collection) getIterable());
+    }
+
+    public static String toJsonJavaString(Collection collection) {
+        return Json.toJsonJavaString(collection);
+    }
+
+    public static String toJsonJavaString(Map map) {
+        return Json.toJsonJavaString(map);
+    }
+
+    public String toJsonJavaString() {
+        return Json.toJsonJavaString((Collection) getIterable());
+    }
+
+    public static Object fromXml(final String xml) {
+        return Xml.fromXml(xml);
+    }
+
+    public static Object fromXmlMakeArrays(final String xml) {
+        return Xml.fromXmlMakeArrays(xml);
+    }
+
+    public static String toXml(Collection collection) {
+        return Xml.toXml(collection);
+    }
+
+    public static String toXml(Map map) {
+        return Xml.toXml(map);
+    }
+
+    public static Object fromJson(String string) {
+        return Json.fromJson(string);
+    }
+
+    public Object fromJson() {
+        return Json.fromJson(getString().get());
+    }
+
+    public String toXml() {
+        return Xml.toXml((Collection) getIterable());
+    }
+
+    public Object fromXml() {
+        return Xml.fromXml(getString().get());
+    }
+
+    @SuppressWarnings("unchecked")
     public static String jsonToXml(String json) {
-        Object result = fromJson(json);
+        Object result = Json.fromJson(json);
         if (result instanceof Map) {
-            return toXml((Map) result);
+            return Xml.toXml((Map) result);
         }
-        return toXml((List) result);
+        return Xml.toXml((List) result);
     }
 
     @SuppressWarnings("unchecked")
     public static String xmlToJson(String xml) {
-        Object result = fromXml(xml);
+        Object result = Xml.fromXml(xml);
         if (result instanceof Map) {
-            return toJson((Map) result);
+            return Json.toJson((Map) result);
         }
-        return toJson((List) result);
+        return Json.toJson((List) result);
     }
 
-    @SuppressWarnings("unchecked")
+    public static String formatJson(String json, Json.JsonStringBuilder.Step identStep) {
+        return Json.formatJson(json, identStep);
+    }
+
     public static String formatJson(String json) {
-        Object result = fromJson(json);
-        if (result instanceof Map) {
-            return toJson((Map) result);
-        }
-        return toJson((List) result);
+        return Json.formatJson(json);
     }
 
-    @SuppressWarnings("unchecked")
-    public static String formatXml(String xml, XmlStringBuilder.Step identStep) {
-        Object result = fromXml(xml);
-        if (result instanceof Map) {
-            return toXml((Map) result, identStep);
-        }
-        return toXml((List) result, identStep);
+    public static String formatXml(String xml, Xml.XmlStringBuilder.Step identStep) {
+        return Xml.formatXml(xml, identStep);
     }
 
     public static String formatXml(String xml) {
-        return formatXml(xml, XmlStringBuilder.Step.THREE_SPACES);
+        return Xml.formatXml(xml);
     }
 }

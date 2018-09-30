@@ -38,6 +38,9 @@ public final class Xml {
     private static final String EMPTY_ELEMENT = ELEMENT + CLOSED_ELEMENT;
     private static final String NULL_ELEMENT = ELEMENT + NULL + CLOSED_ELEMENT;
     private static final java.nio.charset.Charset UTF_8 = java.nio.charset.Charset.forName("UTF-8");
+    private static final java.util.regex.Pattern ATTRS = java.util.regex.Pattern.compile(
+        "((?:(?!\\s|=).)*)\\s*?=\\s*?[\"']?((?:(?<=\")(?:(?<=\\\\)\"|[^\"])*|(?<=')"
+        + "(?:(?<=\\\\)'|[^'])*)|(?:(?!\"|')(?:(?!\\/>|>|\\s).)+))");
 
     public static class XmlStringBuilder {
         public enum Step {
@@ -112,7 +115,7 @@ public final class Xml {
     public static class XmlStringBuilderWithoutRoot extends XmlStringBuilder {
         public XmlStringBuilderWithoutRoot(XmlStringBuilder.Step identStep, String encoding) {
             super(new StringBuilder("<?xml version=\"1.0\" encoding=\""
-                + U.escape(encoding) + "\"?>\n"), identStep, 0);
+                + U.escape(encoding) + "\"?>" + (identStep == Step.COMPACT ? "" : "\n")), identStep, 0);
         }
 
         public String toString() {
@@ -426,7 +429,14 @@ public final class Xml {
         private static void addElements(final XmlStringBuilder.Step identStep, final int ident, Map.Entry entry,
                 Set<String> namespaces, final List<XmlStringBuilder> elems, final boolean addNewLine) {
             boolean parentTextFound = !elems.isEmpty() && elems.get(elems.size() - 1) instanceof XmlStringBuilderText;
-            XmlStringBuilder localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident);
+            final XmlStringBuilder localBuilder;
+            if (String.valueOf(((List) entry.getValue()).get(0)).startsWith("{" + TEXT)
+                || String.valueOf(((List) entry.getValue()).get(((List) entry.getValue()).size() - 1))
+                    .startsWith("{" + TEXT)) {
+                    localBuilder = new XmlStringBuilderText(identStep, ident);
+            } else {
+                localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident);
+            }
             XmlArray.writeXml((List) entry.getValue(), localBuilder,
                     String.valueOf(entry.getKey()), parentTextFound, namespaces);
             if (addNewLine) {
@@ -680,9 +690,17 @@ public final class Xml {
             localMap = map;
         }
         if (localMap == null || localMap.size() != 1
-            || ((String) ((Map.Entry) localMap.entrySet().iterator().next()).getKey()).startsWith("-")
+            || (String.valueOf(((Map.Entry) localMap.entrySet().iterator().next()).getKey())).startsWith("-")
             || ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List) {
-            XmlObject.writeXml(localMap, "root", builder, false, U.<String>newLinkedHashSet());
+            final String name;
+            if (localMap != null && localMap.size() == 1
+                && ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List
+                && !((List) ((Map.Entry) localMap.entrySet().iterator().next()).getValue()).isEmpty()) {
+                name = String.valueOf(((Map.Entry) localMap.entrySet().iterator().next()).getKey());
+            } else {
+                name = "root";
+            }
+            XmlObject.writeXml(localMap, name, builder, false, U.<String>newLinkedHashSet());
         } else {
             XmlObject.writeXml(localMap, null, builder, false, U.<String>newLinkedHashSet());
         }
@@ -707,7 +725,7 @@ public final class Xml {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> createMap(final org.w3c.dom.Node node,
         final Function<Object, Object> nodeMapper, Map<String, Object> attrMap, int[] uniqueIds,
-        final Function<Object, Object> valueMapper) {
+        final Function<Object, Object> valueMapper, String source, int[] sourceIndex) {
         final Map<String, Object> map = U.newLinkedHashMap();
         map.putAll(attrMap);
         final org.w3c.dom.NodeList nodeList = node.getChildNodes();
@@ -718,14 +736,22 @@ public final class Xml {
             final int attributesLength = currentNode.getAttributes() == null
                     ? 0 : currentNode.getAttributes().getLength();
             if (currentNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                sourceIndex[0] = source.indexOf("<" + name, sourceIndex[0]) + name.length() + 2;
                 final Map<String, Object> attrMapLocal = U.newLinkedHashMap();
-                for (int indexAttr = 0; indexAttr < attributesLength; indexAttr += 1) {
-                    final org.w3c.dom.Node currentNodeAttr = currentNode.getAttributes().item(indexAttr);
-                    addNodeValue(attrMapLocal, '-' + currentNodeAttr.getNodeName(),
-                            currentNodeAttr.getTextContent(), nodeMapper, uniqueIds);
+                if (attributesLength > 0) {
+                    final java.util.regex.Matcher matcher = ATTRS.matcher(source.substring(
+                        sourceIndex[0], source.indexOf(">", sourceIndex[0])));
+                    while (matcher.find()) {
+                        addNodeValue(attrMapLocal, '-' + matcher.group(1), matcher.group(2), nodeMapper, uniqueIds);
+                    }
                 }
-                value = createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, valueMapper);
+                value = createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, valueMapper, source, sourceIndex);
             } else {
+                if (COMMENT.equals(name)) {
+                    sourceIndex[0] = source.indexOf("-->", sourceIndex[0]) + 3;
+                } else if (CDATA.equals(name)) {
+                    sourceIndex[0] = source.indexOf("]]>", sourceIndex[0]) + 3;
+                }
                 value = currentNode.getTextContent();
             }
             if (TEXT.equals(name) && valueMapper.apply(value).toString().isEmpty()) {
@@ -794,7 +820,7 @@ public final class Xml {
                 public Object apply(Object object) {
                     return object;
                 }
-            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, valueMapper);
+            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, valueMapper, xml, new int[] {0});
             if (document.getXmlEncoding() != null && !"UTF-8".equalsIgnoreCase(document.getXmlEncoding())) {
                 ((Map) result).put(ENCODING, document.getXmlEncoding());
             } else if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
@@ -839,7 +865,7 @@ public final class Xml {
                 public Object apply(Object object) {
                     return String.valueOf(object).trim();
                 }
-        });
+        }, xml, new int[] {0});
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }

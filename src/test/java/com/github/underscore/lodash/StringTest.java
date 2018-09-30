@@ -1370,8 +1370,8 @@ _.repeat('abc', 0);
                 + "      \"height\": \"500\"\n"
                 + "    },\n"
                 + "    \"image\": {\n"
-                + "      \"-name\": \"sun1\",\n"
                 + "      \"-src\": \"Images/Sun.png\",\n"
+                + "      \"-name\": \"sun1\",\n"
                 + "      \"hOffset\": {\n"
                 + "        \"#text\": \"250\",\n"
                 + "        \"unit\": \"mm\"\n"
@@ -1939,6 +1939,30 @@ _.repeat('abc', 0);
                 + "}";
         assertEquals("<?xml version=\"1.0\" encoding=\"windows-9999\"?>\n<a></a>",
                 U.toXml((Map<String, Object>) U.fromJson(json2)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson20() {
+        final String json = "{\n"
+                + "  \"a\": [\n"
+                + "   {\"#text\": \"Hello    \"},\n"
+                + "   {\"b\": \"World\"}\n"
+                + "  ]\n"
+                + "}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<a>Hello      <b>World</b></a>", U.toXml((Map<String, Object>) U.fromJson(json)));
+        final String json2 = "{\n"
+                + "  \"a\": [\n"
+                + "   {\"b\": \"World\"},\n"
+                + "   {\"#text1\": \".\"}\n"
+                + "  ]\n"
+                + "}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<a>  <b>World</b>.</a>", U.toXml((Map<String, Object>) U.fromJson(json2)));
+        final String json3 = "{\n  \"a\": []\n}";
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<root>\n  <a>\n  </a>\n</root>", U.toXml((Map<String, Object>) U.fromJson(json3)));
     }
 
     @SuppressWarnings("unchecked")

@@ -574,6 +574,8 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
     public void xmlToJson() {
         assertEquals("[\n  \"1\",\n  \"2\"\n]",
             U.xmlToJson("<root><element>1</element><element>2</element></root>"));
+        assertEquals("[\n  \"1\",\n  \"2\"\n]",
+            U.chain("<root><element>1</element><element>2</element></root>").xmlToJson().item());
         assertEquals("{\n  \"a\": {\n    \"b\": [\n      {\n      },\n      {\n      }\n    ]\n  }\n}",
             U.xmlToJson("<a>\n  <b>\n  </b>\n  <b>\n  </b>\n</a>"));
     }
@@ -581,6 +583,8 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
     @Test
     public void jsonToXml() {
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a></a>", U.jsonToXml("{\n  \"a\": {\n  }\n}"));
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a></a>",
+            U.chain("{\n  \"a\": {\n  }\n}").jsonToXml().item());
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n</root>", U.jsonToXml("[]"));
     }
 
@@ -593,7 +597,7 @@ _.get({"a":[{"b":{"c":"d"}}]}, "a[0].b.c");
             U.formatXml("<a>\n  <b>\n  </b>\n  <b>\n  </b>\n</a>"));
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a>\n    <b></b>\n    <b></b>\n</a>",
             U.formatXml("<a>\n  <b>\n  </b>\n  <b>\n  </b>\n</a>", Xml.XmlStringBuilder.Step.FOUR_SPACES));
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a><b></b><b></b></a>",
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?><a><b></b><b></b></a>",
             U.formatXml("<a>\n  <b>\n  </b>\n  <b>\n  </b>\n</a>", Xml.XmlStringBuilder.Step.COMPACT));
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a>\n\t<b></b>\n\t<b></b>\n</a>",
             U.formatXml("<a>\n  <b>\n  </b>\n  <b>\n  </b>\n</a>", Xml.XmlStringBuilder.Step.TABS));

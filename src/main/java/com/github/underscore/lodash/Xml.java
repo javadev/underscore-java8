@@ -36,7 +36,8 @@ public final class Xml {
     private static final String ELEMENT = "<" + ELEMENT_TEXT + ">";
     private static final String CLOSED_ELEMENT = "</" + ELEMENT_TEXT + ">";
     private static final String EMPTY_ELEMENT = ELEMENT + CLOSED_ELEMENT;
-    private static final String NULL_ELEMENT = ELEMENT + NULL + CLOSED_ELEMENT;
+    private static final String NULL_TRUE = " " + NULL + "=\"true\"/>";
+    private static final String NULL_ELEMENT = "<" + ELEMENT_TEXT + NULL_TRUE;
     private static final java.nio.charset.Charset UTF_8 = java.nio.charset.Charset.forName("UTF-8");
     private static final java.util.regex.Pattern ATTRS = java.util.regex.Pattern.compile(
         "((?:(?!\\s|=).)*)\\s*?=\\s*?[\"']?((?:(?<=\")(?:(?<=\\\\)\"|[^\"])*|(?<=')"
@@ -155,8 +156,11 @@ public final class Xml {
             }
             writeXml(collection, builder, name, parentTextFound, namespaces);
             if (name != null) {
-                builder.decIdent().newLine().fillSpaces().append("</")
-                        .append(XmlValue.escapeName(name, namespaces)).append(">");
+                builder.decIdent();
+                if (!collection.isEmpty()) {
+                    builder.newLine().fillSpaces();
+                }
+                builder.append("</").append(XmlValue.escapeName(name, namespaces)).append(">");
             }
         }
 
@@ -168,13 +172,14 @@ public final class Xml {
             for (int index = 0; index < entries.size(); index += 1) {
                 final Object value = entries.get(index);
                 final boolean addNewLine = index < entries.size() - 1
-                    && !String.valueOf(entries.get(index + 1)).startsWith("{" + TEXT);
+                    && !XmlValue.getMapKey(entries.get(index + 1)).startsWith(TEXT);
                 if (value == null) {
                     builder.fillSpaces()
-                        .append("<" + (name == null ? ELEMENT_TEXT : XmlValue.escapeName(name, namespaces)) + ">"
-                        + NULL + "</" + (name == null ? ELEMENT_TEXT : XmlValue.escapeName(name, namespaces)) + ">");
+                        .append("<" + (name == null ? ELEMENT_TEXT : XmlValue.escapeName(name, namespaces))
+                        + NULL_TRUE);
                 } else {
-                    if (value instanceof Map && ((Map) value).size() == 1) {
+                    if (value instanceof Map && ((Map) value).size() == 1
+                        && !XmlValue.getMapKey(value).startsWith("-")) {
                         XmlObject.writeXml((Map) value, null, builder, localParentTextFound, namespaces);
                         if (String.valueOf(((Map.Entry) ((Map) value).entrySet().iterator()
                             .next()).getKey()).startsWith(TEXT)) {
@@ -349,7 +354,7 @@ public final class Xml {
 
     public static class XmlObject {
         @SuppressWarnings("unchecked")
-        public static void writeXml(Map map, String name, final XmlStringBuilder builder,
+        public static void writeXml(final Map map, final String name, final XmlStringBuilder builder,
             final boolean parentTextFound, final Set<String> namespaces) {
             if (map == null) {
                 XmlValue.writeXml(NULL, name, builder, false, namespaces);
@@ -378,6 +383,12 @@ public final class Xml {
                     processElements(entry, identStep, ident, addNewLine, elems, namespaces);
                 }
             }
+            addToBuilder(name, parentTextFound, builder, namespaces, attrs, elems);
+        }
+
+        private static void addToBuilder(final String name, final boolean parentTextFound,
+                final XmlStringBuilder builder, final Set<String> namespaces, final List<String> attrs,
+                final List<XmlStringBuilder> elems) {
             if (name != null) {
                 if (!parentTextFound) {
                     builder.fillSpaces();
@@ -430,9 +441,9 @@ public final class Xml {
                 Set<String> namespaces, final List<XmlStringBuilder> elems, final boolean addNewLine) {
             boolean parentTextFound = !elems.isEmpty() && elems.get(elems.size() - 1) instanceof XmlStringBuilderText;
             final XmlStringBuilder localBuilder;
-            if (String.valueOf(((List) entry.getValue()).get(0)).startsWith("{" + TEXT)
-                || String.valueOf(((List) entry.getValue()).get(((List) entry.getValue()).size() - 1))
-                    .startsWith("{" + TEXT)) {
+            if (XmlValue.getMapKey(((List) entry.getValue()).get(0)).startsWith(TEXT)
+                || XmlValue.getMapKey(((List) entry.getValue()).get(((List) entry.getValue()).size() - 1))
+                    .startsWith(TEXT)) {
                     localBuilder = new XmlStringBuilderText(identStep, ident);
             } else {
                 localBuilder = new XmlStringBuilderWithoutHeader(identStep, ident);
@@ -499,45 +510,57 @@ public final class Xml {
             if (!parentTextFound) {
                 builder.fillSpaces();
             }
-            builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
             if (value == null) {
-                builder.append(NULL);
+                builder.append("<" + XmlValue.escapeName(name, namespaces) + NULL_TRUE);
             } else if (value instanceof String) {
-                builder.append(escape((String) value));
+                if (((String) value).isEmpty()) {
+                    builder.append("<" + XmlValue.escapeName(name, namespaces) + " string=\"true\"/>");
+                } else {
+                    builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
+                    builder.append(escape((String) value));
+                    builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
+                }
             } else {
                 processArrays(value, builder, name, parentTextFound, namespaces);
             }
-            builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
         }
 
         private static void processArrays(Object value, XmlStringBuilder builder, String name,
                 boolean parentTextFound, Set<String> namespaces) {
             if (value instanceof Double) {
                 if (((Double) value).isInfinite() || ((Double) value).isNaN()) {
-                    builder.append(NULL);
+                    builder.append(NULL_ELEMENT);
                 } else {
+                    builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
                     builder.append(value.toString());
+                    builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
                 }
             } else if (value instanceof Float) {
                 if (((Float) value).isInfinite() || ((Float) value).isNaN()) {
-                    builder.append(NULL);
+                    builder.append(NULL_ELEMENT);
                 } else {
+                    builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
                     builder.append(value.toString());
+                    builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
                 }
-            } else if (value instanceof Number) {
-                builder.append(value.toString());
-            } else if (value instanceof Boolean) {
-                builder.append(value.toString());
-            } else if (value instanceof byte[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((byte[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
-            } else if (value instanceof short[]) {
-                builder.newLine().incIdent();
-                XmlArray.writeXml((short[]) value, builder);
-                builder.decIdent().newLine().fillSpaces();
             } else {
-                processArrays2(value, builder, name, parentTextFound, namespaces);
+                builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
+                if (value instanceof Number) {
+                    builder.append(value.toString());
+                } else if (value instanceof Boolean) {
+                    builder.append(value.toString());
+                } else if (value instanceof byte[]) {
+                    builder.newLine().incIdent();
+                    XmlArray.writeXml((byte[]) value, builder);
+                    builder.decIdent().newLine().fillSpaces();
+                } else if (value instanceof short[]) {
+                    builder.newLine().incIdent();
+                    XmlArray.writeXml((short[]) value, builder);
+                    builder.decIdent().newLine().fillSpaces();
+                } else {
+                    processArrays2(value, builder, name, parentTextFound, namespaces);
+                }
+                builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
             }
         }
 
@@ -662,16 +685,24 @@ public final class Xml {
                 }
             }
         }
+
+        public static String getMapKey(Object map) {
+            return map instanceof Map && !((Map) map).isEmpty() ? String.valueOf(
+               ((Map.Entry) ((Map) map).entrySet().iterator().next()).getKey()) : "";
+        }
     }
 
     public static String toXml(Collection collection, XmlStringBuilder.Step identStep) {
         final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name());
         builder.append("<root>").incIdent();
-        if (collection == null || !collection.isEmpty()) {
+        if (collection != null && !collection.isEmpty()) {
             builder.newLine();
         }
         XmlArray.writeXml(collection, null, builder, false, U.<String>newLinkedHashSet());
-        return builder.newLine().append("</root>").toString();
+        if (collection != null && !collection.isEmpty()) {
+            builder.newLine();
+        }
+        return builder.append("</root>").toString();
     }
 
     public static String toXml(Collection collection) {
@@ -690,21 +721,33 @@ public final class Xml {
             localMap = map;
         }
         if (localMap == null || localMap.size() != 1
-            || (String.valueOf(((Map.Entry) localMap.entrySet().iterator().next()).getKey())).startsWith("-")
+            || XmlValue.getMapKey(map).startsWith("-")
             || ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List) {
-            final String name;
-            if (localMap != null && localMap.size() == 1
-                && ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List
-                && !((List) ((Map.Entry) localMap.entrySet().iterator().next()).getValue()).isEmpty()) {
-                name = String.valueOf(((Map.Entry) localMap.entrySet().iterator().next()).getKey());
-            } else {
-                name = "root";
-            }
-            XmlObject.writeXml(localMap, name, builder, false, U.<String>newLinkedHashSet());
+            XmlObject.writeXml(localMap, getRootName(localMap), builder, false, U.<String>newLinkedHashSet());
         } else {
             XmlObject.writeXml(localMap, null, builder, false, U.<String>newLinkedHashSet());
         }
         return builder.toString();
+    }
+
+    private static String getRootName(final Map localMap) {
+        final String name;
+        if (localMap != null && localMap.size() == 1
+                && ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List
+                && !((List) ((Map.Entry) localMap.entrySet().iterator().next()).getValue()).isEmpty()) {
+            boolean allMapItems = true;
+            for (Object item : (List) ((Map.Entry) localMap.entrySet().iterator().next()).getValue()) {
+                if (!(item instanceof Map)) {
+                    allMapItems = false;
+                    break;
+                }
+            }
+            name = allMapItems ? String.valueOf(((Map.Entry) localMap.entrySet().iterator().next()).getKey())
+                    : "root";
+        } else {
+            name = "root";
+        }
+        return name;
     }
 
     public static String toXml(Map map) {
@@ -717,6 +760,10 @@ public final class Xml {
             final Map.Entry<String, Object> entry = ((Map<String, Object>) value).entrySet().iterator().next();
             if (TEXT.equals(entry.getKey()) || entry.getKey().equals(ELEMENT_TEXT)) {
                 return entry.getValue();
+            } else if ("-null".equals(entry.getKey()) && "true".equals(entry.getValue())) {
+                return null;
+            } else if ("-string".equals(entry.getKey()) && "true".equals(entry.getValue())) {
+                return "";
             }
         }
         return value;
@@ -724,8 +771,8 @@ public final class Xml {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> createMap(final org.w3c.dom.Node node,
-        final Function<Object, Object> nodeMapper, Map<String, Object> attrMap, int[] uniqueIds,
-        final Function<Object, Object> valueMapper, String source, int[] sourceIndex) {
+        final Function<Object, Object> nodeMapper, final Map<String, Object> attrMap, final int[] uniqueIds,
+        final String source, final int[] sourceIndex) {
         final Map<String, Object> map = U.newLinkedHashMap();
         map.putAll(attrMap);
         final org.w3c.dom.NodeList nodeList = node.getChildNodes();
@@ -733,19 +780,9 @@ public final class Xml {
             final org.w3c.dom.Node currentNode = nodeList.item(index);
             final String name = currentNode.getNodeName();
             final Object value;
-            final int attributesLength = currentNode.getAttributes() == null
-                    ? 0 : currentNode.getAttributes().getLength();
             if (currentNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
                 sourceIndex[0] = source.indexOf("<" + name, sourceIndex[0]) + name.length() + 2;
-                final Map<String, Object> attrMapLocal = U.newLinkedHashMap();
-                if (attributesLength > 0) {
-                    final java.util.regex.Matcher matcher = ATTRS.matcher(source.substring(
-                        sourceIndex[0], source.indexOf(">", sourceIndex[0])));
-                    while (matcher.find()) {
-                        addNodeValue(attrMapLocal, '-' + matcher.group(1), matcher.group(2), nodeMapper, uniqueIds);
-                    }
-                }
-                value = createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, valueMapper, source, sourceIndex);
+                value = addElement(sourceIndex, source, nodeMapper, uniqueIds, currentNode);
             } else {
                 if (COMMENT.equals(name)) {
                     sourceIndex[0] = source.indexOf("-->", sourceIndex[0]) + 3;
@@ -754,7 +791,9 @@ public final class Xml {
                 }
                 value = currentNode.getTextContent();
             }
-            if (TEXT.equals(name) && valueMapper.apply(value).toString().isEmpty()) {
+            if (TEXT.equals(name) && node.getChildNodes().getLength() > 1
+                && String.valueOf(value).trim().isEmpty()
+                || currentNode.getNodeType() == org.w3c.dom.Node.DOCUMENT_TYPE_NODE) {
                 continue;
             }
             addNodeValue(map, name, value, nodeMapper, uniqueIds);
@@ -762,9 +801,23 @@ public final class Xml {
         return map;
     }
 
+    private static Object addElement(final int[] sourceIndex, final String source,
+            final Function<Object, Object> nodeMapper, final int[] uniqueIds,
+            final org.w3c.dom.Node currentNode) {
+        final Map<String, Object> attrMapLocal = U.newLinkedHashMap();
+        if (currentNode.getAttributes().getLength() > 0) {
+            final java.util.regex.Matcher matcher = ATTRS.matcher(source.substring(
+                    sourceIndex[0], source.indexOf('>', sourceIndex[0])));
+            while (matcher.find()) {
+                addNodeValue(attrMapLocal, '-' + matcher.group(1), matcher.group(2), nodeMapper, uniqueIds);
+            }
+        }
+        return createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, source, sourceIndex);
+    }
+
     @SuppressWarnings("unchecked")
     private static void addNodeValue(final Map<String, Object> map, final String name, final Object value,
-            final Function<Object, Object> nodeMapper, int[] uniqueIds) {
+            final Function<Object, Object> nodeMapper, final int[] uniqueIds) {
         if (map.containsKey(name)) {
             if (TEXT.equals(name)) {
                 map.put(name + uniqueIds[0], nodeMapper.apply(getValue(value)));
@@ -810,7 +863,7 @@ public final class Xml {
     }
 
     @SuppressWarnings("unchecked")
-    public static Object fromXml(final String xml, final Function<Object, Object> valueMapper) {
+    public static Object fromXml(final String xml) {
         if (xml == null) {
             return null;
         }
@@ -820,7 +873,7 @@ public final class Xml {
                 public Object apply(Object object) {
                     return object;
                 }
-            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, valueMapper, xml, new int[] {0});
+            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, xml, new int[] {0});
             if (document.getXmlEncoding() != null && !"UTF-8".equalsIgnoreCase(document.getXmlEncoding())) {
                 ((Map) result).put(ENCODING, document.getXmlEncoding());
             } else if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
@@ -834,19 +887,12 @@ public final class Xml {
         }
     }
 
-    public static Object fromXml(final String xml) {
-        return fromXml(xml, new Function<Object, Object>() {
-                public Object apply(Object object) {
-                    return String.valueOf(object).trim();
-                }
-        });
-    }
-
     private static org.w3c.dom.Document createDocument(final String xml)
             throws java.io.IOException, javax.xml.parsers.ParserConfigurationException, org.xml.sax.SAXException {
         final javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
         final javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
         builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler());
@@ -860,12 +906,7 @@ public final class Xml {
                 public Object apply(Object object) {
                     return object instanceof List ? object : U.newArrayList(Arrays.asList(object));
                 }
-            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1},
-            new Function<Object, Object>() {
-                public Object apply(Object object) {
-                    return String.valueOf(object).trim();
-                }
-        }, xml, new int[] {0});
+            }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, xml, new int[] {0});
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }

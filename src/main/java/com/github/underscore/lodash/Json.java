@@ -409,33 +409,45 @@ public final class Json {
             StringBuilder result = new StringBuilder();
             int underlineCount = 0;
             StringBuilder lastChars = new StringBuilder();
-            outer:
-            for (int i = 0; i < length; ++i) {
+            int i = 0;
+            while (i < length) {
                 char ch = name.charAt(i);
                 if (ch == '_') {
                     lastChars.append(ch);
                 } else {
                     if (lastChars.length() == 2) {
                         StringBuilder nameToDecode = new StringBuilder();
+                        boolean nameWasDecoded = false;
                         for (int j = i; j < length; ++j) {
                             if (name.charAt(j) == '_') {
                                 underlineCount += 1;
                                 if (underlineCount == 2) {
-                                    result.append(JsonValue.escape(Base32.decode(nameToDecode.toString())));
+                                    try {
+                                        result.append(JsonValue.escape(Base32.decode(nameToDecode.toString())));
+                                    } catch (Base32.DecodingException ex) {
+                                        result.append(JsonValue.escape("__"
+                                            + nameToDecode.append(lastChars).toString()));
+                                    }
                                     i = j;
                                     underlineCount = 0;
                                     lastChars.setLength(0);
-                                    continue outer;
+                                    nameWasDecoded = true;
+                                    break;
                                 }
                             } else {
                                 nameToDecode.append(name.charAt(j));
                                 underlineCount = 0;
                             }
                         }
+                        if (nameWasDecoded) {
+                            i += 1;
+                            continue;
+                        }
                     }
                     result.append(lastChars).append(ch);
                     lastChars.setLength(0);
                 }
+                i += 1;
             }
             return result.append(lastChars).toString();
         }
@@ -734,11 +746,21 @@ public final class Json {
             readFraction();
             readExponent();
             final String number = endCapture();
+            final Number result;
             if (number.contains(".") || number.contains("e") || number.contains("E")) {
-                return Double.valueOf(number);
+                if (number.length() > 9) {
+                    result = new java.math.BigDecimal(number);
+                } else {
+                    result = Double.valueOf(number);
+                }
             } else {
-                return Long.valueOf(number);
+                if (number.length() > 20) {
+                    result = new java.math.BigInteger(number);
+                } else {
+                    result = Long.valueOf(number);
+                }
             }
+            return result;
         }
 
         private boolean readFraction() {

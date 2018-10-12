@@ -56,6 +56,7 @@ public class U<T> {
     private static final String ESCAPE = "escape";
     private static final java.util.regex.Pattern FORMAT_PATTERN =
         java.util.regex.Pattern.compile("\\{\\s*(\\d*)\\s*\\}");
+    private static final Map<Character, String> ESCAPES = new HashMap<Character, String>();
     private final Iterable<T> iterable;
     private final Optional<String> string;
 
@@ -63,6 +64,12 @@ public class U<T> {
         TEMPLATE_SETTINGS.put(EVALUATE, "<%([\\s\\S]+?)%>");
         TEMPLATE_SETTINGS.put(INTERPOLATE, "<%=([\\s\\S]+?)%>");
         TEMPLATE_SETTINGS.put(ESCAPE, "<%-([\\s\\S]+?)%>");
+        ESCAPES.put('&', "&amp;");
+        ESCAPES.put('<', "&lt;");
+        ESCAPES.put('>', "&gt;");
+        ESCAPES.put('"', "&quot;");
+        ESCAPES.put('\'', "&#x27;");
+        ESCAPES.put('`', "&#x60;");
     }
 
     public U(final Iterable<T> iterable) {
@@ -515,12 +522,12 @@ public class U<T> {
     }
 
     public static <E> boolean every(final Iterable<E> iterable, final Predicate<E> pred) {
-        return !find(iterable, new Predicate<E>() {
-            @Override
-            public boolean test(E arg) {
-                return !pred.test(arg);
+        for (E item : iterable) {
+            if (!pred.test(item)) {
+                return false;
             }
-        }).isPresent();
+        }
+        return true;
     }
 
     public boolean every(final Predicate<T> pred) {
@@ -989,7 +996,7 @@ public class U<T> {
         return first(iterable);
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <E> E head(final E ... array) {
         return first(array);
     }
@@ -1031,7 +1038,7 @@ public class U<T> {
         return initial((List<T>) iterable, n);
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <E> E last(final E ... array) {
         return array[array.length - 1];
     }
@@ -1112,7 +1119,7 @@ public class U<T> {
         return rest(list, n);
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <E> E[] tail(final E ... array) {
         return rest(array);
     }
@@ -2003,8 +2010,11 @@ public class U<T> {
     }
 
     public static String escape(final String value) {
-        return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-            .replaceAll("\"", "&quot;").replaceAll("'", "&#x27;").replaceAll("`", "&#x60;");
+        final StringBuilder builder = new StringBuilder();
+        for (final char ch : value.toCharArray()) {
+            builder.append(ESCAPES.containsKey(ch) ? ESCAPES.get(ch) : ch);
+        }
+        return builder.toString();
     }
 
     public static String unescape(final String value) {
@@ -2532,7 +2542,7 @@ public class U<T> {
         return join(iterable);
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <T> List<T> push(final List<T> list, final T ... values) {
         final List<T> result = newArrayList(list);
         for (T value : values) {
@@ -2554,7 +2564,7 @@ public class U<T> {
         return pop((List<T>) getIterable());
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <T> List<T> unshift(final List<T> list, final T ... values) {
         final List<T> result = newArrayList(list);
         int index = 0;

@@ -6,6 +6,8 @@ underscore-java8
 [![Build Status](https://secure.travis-ci.org/javadev/underscore-java8.svg)](https://travis-ci.org/javadev/underscore-java8)
 [![Run Status](https://api.shippable.com/projects/5a91f397d03865070011c058/badge?branch=master)](https://app.shippable.com/github/javadev/underscore-java8)
 [![codecov](https://codecov.io/gh/javadev/underscore-java8/branch/master/graph/badge.svg)](https://codecov.io/gh/javadev/underscore-java8)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=javadev_underscore-java8&metric=alert_status)](https://sonarcloud.io/dashboard/index/javadev_underscore-java8)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=javadev_underscore-java8&metric=sqale_rating)](https://sonarcloud.io/dashboard/index/javadev_underscore-java8)
 
 Requirements
 ============

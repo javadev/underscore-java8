@@ -45,6 +45,9 @@ public final class Xml {
     private static final String NULL_ELEMENT = "<" + ELEMENT_TEXT + NULL_TRUE;
     private static final String BOOLEAN = "-boolean";
     private static final String TRUE = "true";
+    private static final String SELF_CLOSING = "-self-closing";
+    private static final String STRING = "-string";
+    private static final String NULL_ATTR = "-null";
     private static final java.nio.charset.Charset UTF_8 = java.nio.charset.Charset.forName("UTF-8");
     private static final java.util.regex.Pattern ATTRS = java.util.regex.Pattern.compile(
         "((?:(?!\\s|=).)*)\\s*?=\\s*?[\"']?((?:(?<=\")(?:(?<=\\\\)\"|[^\"])*|(?<=')"
@@ -209,7 +212,7 @@ public final class Xml {
                         }
                     } else {
                         XmlValue.writeXml(value, name == null ? ELEMENT_TEXT : name, builder, localParentTextFound,
-                            namespaces, collection.size() == 1);
+                            namespaces, collection.size() == 1 || value instanceof Collection);
                     }
                     localParentTextFound = false;
                 }
@@ -428,25 +431,39 @@ public final class Xml {
         private static void addToBuilder(final String name, final boolean parentTextFound,
                 final XmlStringBuilder builder, final Set<String> namespaces, final List<String> attrs,
                 final List<XmlStringBuilder> elems) {
-            if (name != null) {
-                if (!parentTextFound) {
-                    builder.fillSpaces();
+            final boolean selfClosing = attrs.remove(" self-closing=\"true\"");
+            addOpenElement(name, parentTextFound, builder, namespaces, selfClosing, attrs, elems);
+            if (!selfClosing) {
+                for (XmlStringBuilder localBuilder1 : elems) {
+                    builder.append(localBuilder1.toString());
                 }
-                builder.append("<").append(XmlValue.escapeName(name, namespaces)).append(U.join(attrs, ""))
-                        .append(">").incIdent();
-                if (!elems.isEmpty() && !(elems.get(0) instanceof XmlStringBuilderText)) {
-                    builder.newLine();
-                }
-            }
-            for (XmlStringBuilder localBuilder1 : elems) {
-                builder.append(localBuilder1.toString());
             }
             if (name != null) {
                 builder.decIdent();
                 if (!elems.isEmpty() && !(elems.get(elems.size() - 1) instanceof XmlStringBuilderText)) {
                     builder.newLine().fillSpaces();
                 }
-                builder.append("</").append(XmlValue.escapeName(name, namespaces)).append(">");
+                if (!selfClosing) {
+                    builder.append("</").append(XmlValue.escapeName(name, namespaces)).append(">");
+                }
+            }
+        }
+
+        private static void addOpenElement(final String name, final boolean parentTextFound,
+                final XmlStringBuilder builder, final Set<String> namespaces, final boolean selfClosing,
+                final List<String> attrs, final List<XmlStringBuilder> elems) {
+            if (name != null) {
+                if (!parentTextFound) {
+                    builder.fillSpaces();
+                }
+                builder.append("<").append(XmlValue.escapeName(name, namespaces)).append(U.join(attrs, ""));
+                if (selfClosing) {
+                    builder.append("/");
+                }
+                builder.append(">").incIdent();
+                if (!elems.isEmpty() && !(elems.get(0) instanceof XmlStringBuilderText)) {
+                    builder.newLine();
+                }
             }
         }
 
@@ -477,6 +494,12 @@ public final class Xml {
                     attrs.add(NUMBER_TEXT);
                 } else if (entry.getValue() instanceof Boolean && !attrKeys.contains(BOOLEAN)) {
                     attrs.add(" boolean=\"true\"");
+                } else if (entry.getValue() == null && !attrKeys.contains(NULL_ATTR)) {
+                    attrs.add(" null=\"true\"");
+                    return;
+                } else if ("".equals(entry.getValue()) && !attrKeys.contains(STRING)) {
+                    attrs.add(" string=\"true\"");
+                    return;
                 }
                 elems.add(new XmlStringBuilderText(identStep, ident).append(
                         XmlValue.escape(String.valueOf(entry.getValue()))));
@@ -858,10 +881,6 @@ public final class Xml {
             final Map.Entry<String, Object> entry = ((Map<String, Object>) value).entrySet().iterator().next();
             if (TEXT.equals(entry.getKey()) || entry.getKey().equals(ELEMENT_TEXT)) {
                 localValue = entry.getValue();
-            } else if ("-null".equals(entry.getKey()) && TRUE.equals(entry.getValue())) {
-                localValue = null;
-            } else if ("-string".equals(entry.getKey()) && TRUE.equals(entry.getValue())) {
-                localValue = "";
             } else {
                 localValue = value;
             }
@@ -901,7 +920,7 @@ public final class Xml {
             final String name = currentNode.getNodeName();
             final Object value;
             if (currentNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
-                sourceIndex[0] = source.indexOf("<" + name, sourceIndex[0]) + name.length() + 2;
+                sourceIndex[0] = source.indexOf("<" + name, sourceIndex[0]) + name.length() + 1;
                 value = addElement(sourceIndex, source, nodeMapper, uniqueIds, currentNode);
             } else {
                 if (COMMENT.equals(name)) {
@@ -918,11 +937,11 @@ public final class Xml {
             }
             addNodeValue(map, name, value, nodeMapper, uniqueIds);
         }
-        return checkArrayAndNumber(map);
+        return checkArrayAndNumber(map, node.getNodeName());
     }
 
     @SuppressWarnings("unchecked")
-    private static Object checkArrayAndNumber(final Map<String, Object> map) {
+    private static Object checkArrayAndNumber(final Map<String, Object> map, final String name) {
         final Map<String, Object> localMap;
         if (map.containsKey(NUMBER) && TRUE.equals(map.get(NUMBER)) && map.containsKey(TEXT)) {
             localMap = (Map) ((LinkedHashMap) map).clone();
@@ -939,15 +958,43 @@ public final class Xml {
         } else {
             localMap2 = localMap;
         }
+        final Map<String, Object> localMap3 = checkNullAndString(localMap2);
         final Object object;
         if (map.containsKey(ARRAY) && TRUE.equals(map.get(ARRAY))) {
-            final Map<String, Object> localMap3 = (Map) ((LinkedHashMap) localMap2).clone();
-            localMap3.remove(ARRAY);
-            object = U.newArrayList(Arrays.asList(getValue(localMap3)));
+            final Map<String, Object> localMap4 = (Map) ((LinkedHashMap) localMap3).clone();
+            localMap4.remove(ARRAY);
+            object = name.equals(XmlValue.getMapKey(localMap4))
+                ?  U.newArrayList(Arrays.asList(getValue(XmlValue.getMapValue(localMap4))))
+                : U.newArrayList(Arrays.asList(getValue(localMap4)));
         } else {
-            object = localMap2;
+            object = localMap3;
         }
         return object;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> checkNullAndString(final Map<String, Object> map) {
+        final Map<String, Object> localMap;
+        if (map.containsKey(NULL_ATTR) && TRUE.equals(map.get(NULL_ATTR))) {
+            localMap = (Map) ((LinkedHashMap) map).clone();
+            localMap.remove(NULL_ATTR);
+            if (!map.containsKey(TEXT)) {
+                localMap.put(TEXT, null);
+            }
+        } else {
+            localMap = map;
+        }
+        final Map<String, Object> localMap2;
+        if (map.containsKey(STRING) && TRUE.equals(map.get(STRING))) {
+            localMap2 = (Map) ((LinkedHashMap) localMap).clone();
+            localMap2.remove(STRING);
+            if (!map.containsKey(TEXT)) {
+                localMap2.put(TEXT, "");
+            }
+        } else {
+            localMap2 = localMap;
+        }
+        return localMap2;
     }
 
     private static Object addElement(final int[] sourceIndex, final String source,
@@ -960,6 +1007,12 @@ public final class Xml {
             while (matcher.find()) {
                 addNodeValue(attrMapLocal, '-' + matcher.group(1), matcher.group(2), nodeMapper, uniqueIds);
             }
+        }
+        if (source.substring(sourceIndex[0], source.indexOf('>', sourceIndex[0])).endsWith("/")
+                && !attrMapLocal.containsKey(SELF_CLOSING) && (attrMapLocal.size() != 1
+                || ((!attrMapLocal.containsKey(STRING) || !TRUE.equals(attrMapLocal.get(STRING)))
+                && (!attrMapLocal.containsKey(NULL_ATTR) || !TRUE.equals(attrMapLocal.get(NULL_ATTR)))))) {
+            attrMapLocal.put(SELF_CLOSING, TRUE);
         }
         return createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, source, sourceIndex);
     }

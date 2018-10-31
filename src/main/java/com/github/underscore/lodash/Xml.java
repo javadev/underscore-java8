@@ -32,6 +32,8 @@ public final class Xml {
     private static final String CDATA = "#cdata-section";
     private static final String COMMENT = "#comment";
     private static final String ENCODING = "#encoding";
+    private static final String STANDALONE = "#standalone";
+    private static final String YES = "yes";
     private static final String TEXT = "#text";
     private static final String NUMBER = "-number";
     private static final String ELEMENT = "<" + ELEMENT_TEXT + ">";
@@ -49,6 +51,7 @@ public final class Xml {
     private static final String STRING = "-string";
     private static final String NULL_ATTR = "-null";
     private static final String EMPTY_ARRAY = "-empty-array";
+    private static final String QUOT = "&quot;";
     private static final java.nio.charset.Charset UTF_8 = java.nio.charset.Charset.forName("UTF-8");
     private static final java.util.regex.Pattern ATTRS = java.util.regex.Pattern.compile(
         "((?:(?!\\s|=).)*)\\s*?=\\s*?[\"']?((?:(?<=\")(?:(?<=\\\\)\"|[^\"])*|(?<=')"
@@ -56,7 +59,7 @@ public final class Xml {
     private static final Map<String, String> XML_UNESCAPE = new HashMap<String, String>();
 
     static {
-        XML_UNESCAPE.put("&quot;", "\"");
+        XML_UNESCAPE.put(QUOT, "\"");
         XML_UNESCAPE.put("&amp;", "&");
         XML_UNESCAPE.put("&lt;", "<");
         XML_UNESCAPE.put("&gt;", ">");
@@ -134,9 +137,10 @@ public final class Xml {
     }
 
     public static class XmlStringBuilderWithoutRoot extends XmlStringBuilder {
-        public XmlStringBuilderWithoutRoot(XmlStringBuilder.Step identStep, String encoding) {
+        public XmlStringBuilderWithoutRoot(XmlStringBuilder.Step identStep, String encoding,
+            String standalone) {
             super(new StringBuilder("<?xml version=\"1.0\" encoding=\""
-                + XmlValue.escape(encoding).replace("\"", "&quot;") + "\"?>"
+                + XmlValue.escape(encoding).replace("\"", QUOT) + "\"" + standalone + "?>"
                 + (identStep == Step.COMPACT ? "" : "\n")), identStep, 0);
         }
 
@@ -403,7 +407,7 @@ public final class Xml {
                     && !String.valueOf(entries.get(index + 1).getKey()).startsWith(TEXT);
                 if (String.valueOf(entry.getKey()).startsWith("-") && (entry.getValue() instanceof String)) {
                     attrs.add(" " + XmlValue.escapeName(String.valueOf(entry.getKey()).substring(1), namespaces)
-                        + "=\"" + XmlValue.escape(String.valueOf(entry.getValue())).replace("\"", "&quot;") + "\"");
+                        + "=\"" + XmlValue.escape(String.valueOf(entry.getValue())).replace("\"", QUOT) + "\"");
                 } else if (String.valueOf(entry.getKey()).startsWith(TEXT)) {
                     addText(entry, elems, identStep, ident, attrKeys, attrs);
                 } else {
@@ -838,7 +842,7 @@ public final class Xml {
     }
 
     public static String toXml(Collection collection, XmlStringBuilder.Step identStep) {
-        final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name());
+        final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(), "");
         builder.append("<root");
         if (collection != null && collection.isEmpty()) {
             builder.append(" empty-array=\"true\"");
@@ -862,21 +866,42 @@ public final class Xml {
         final XmlStringBuilder builder;
         final Map localMap;
         if (map != null && map.containsKey(ENCODING)) {
-            builder = new XmlStringBuilderWithoutRoot(identStep, String.valueOf(map.get(ENCODING)));
             localMap = (Map) U.clone(map);
-            localMap.remove(ENCODING);
+            builder = checkStandalone(String.valueOf(localMap.remove(ENCODING)), identStep, localMap);
+        } else if (map != null && map.containsKey(STANDALONE)) {
+            localMap = (Map) U.clone(map);
+            builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(),
+                " standalone=\"" + (YES.equals(map.get(STANDALONE)) ? YES : "no") + "\"");
+            localMap.remove(STANDALONE);
         } else {
-            builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name());
+            builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(), "");
             localMap = map;
         }
+        checkLocalMap(builder, localMap);
+        return builder.toString();
+    }
+
+    private static void checkLocalMap(final XmlStringBuilder builder, final Map localMap) {
         if (localMap == null || localMap.size() != 1
-            || XmlValue.getMapKey(map).startsWith("-")
+            || XmlValue.getMapKey(localMap).startsWith("-")
             || ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List) {
             XmlObject.writeXml(localMap, getRootName(localMap), builder, false, U.<String>newLinkedHashSet(), false);
         } else {
             XmlObject.writeXml(localMap, null, builder, false, U.<String>newLinkedHashSet(), false);
         }
-        return builder.toString();
+    }
+
+    private static XmlStringBuilder checkStandalone(String encoding, XmlStringBuilder.Step identStep,
+        final Map localMap) {
+        final XmlStringBuilder builder;
+        if (localMap.containsKey(STANDALONE)) {
+            builder = new XmlStringBuilderWithoutRoot(identStep, encoding,
+                " standalone=\"" + (YES.equals(localMap.get(STANDALONE)) ? YES : "no") + "\"");
+            localMap.remove(STANDALONE);
+        } else {
+            builder = new XmlStringBuilderWithoutRoot(identStep, encoding, "");
+        }
+        return builder;
     }
 
     @SuppressWarnings("unchecked")
@@ -1130,6 +1155,11 @@ public final class Xml {
             }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, xml, new int[] {0});
             if (document.getXmlEncoding() != null && !"UTF-8".equalsIgnoreCase(document.getXmlEncoding())) {
                 ((Map) result).put(ENCODING, document.getXmlEncoding());
+                if (document.getXmlStandalone()) {
+                    ((Map) result).put(STANDALONE, YES);
+                }
+            } else if (document.getXmlStandalone()) {
+                ((Map) result).put(STANDALONE, YES);
             } else if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
                 && (((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof List
                 || ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof Map)) {

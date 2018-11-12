@@ -492,6 +492,7 @@ _.repeat('abc', 0);
         assertEquals("\\r", Json.JsonValue.escape("\r"));
         assertEquals("\\t", Json.JsonValue.escape("\t"));
         assertEquals("/", Json.JsonValue.escape("/"));
+        assertEquals("€", Json.JsonValue.escape("€"));
         assertEquals("\\u0000", Json.JsonValue.escape("\u0000"));
         assertEquals("\\u001F", Json.JsonValue.escape("\u001F"));
         assertEquals("\u0020", Json.JsonValue.escape("\u0020"));
@@ -1014,6 +1015,7 @@ _.repeat('abc', 0);
     public void escapeXml() {
         assertEquals("", Xml.XmlValue.escape(null));
         assertEquals("\"", Xml.XmlValue.escape("\""));
+        assertEquals("€", Xml.XmlValue.escape("€"));
         assertEquals("'", Xml.XmlValue.escape("'"));
         assertEquals("&amp;", Xml.XmlValue.escape("&"));
         assertEquals("&lt;", Xml.XmlValue.escape("<"));
@@ -1403,7 +1405,8 @@ _.repeat('abc', 0);
                 + "      \"vOffset\": \"250\",\n"
                 + "      \"alignment\": \"center\"\n"
                 + "    }\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1414,7 +1417,8 @@ _.repeat('abc', 0);
         final String xml = "<a></a>";
         assertEquals("{\n"
                 + "  \"a\": {\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1426,7 +1430,8 @@ _.repeat('abc', 0);
                 + "</__FU__a>";
         assertEquals("{\n"
                 + "  \"-a\": {\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1438,7 +1443,8 @@ _.repeat('abc', 0);
                 + "</__FU____EE__a>";
         assertEquals("{\n"
                 + "  \"-!a\": {\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1450,7 +1456,8 @@ _.repeat('abc', 0);
                 + "</__FU__a__EE__a>";
         assertEquals("{\n"
                 + "  \"-a!a\": {\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1463,7 +1470,8 @@ _.repeat('abc', 0);
         assertEquals("{\n"
                 + "  \"\": {\n"
                 + "    \"-\": \"1\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1479,7 +1487,8 @@ _.repeat('abc', 0);
     public void toJsonFromXml9() {
         final String xml = "<root>\n  <element>1</element>\n</root>";
         assertEquals("{\n"
-                + "  \"root\": \"1\"\n"
+                + "  \"root\": \"1\",\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1507,7 +1516,8 @@ _.repeat('abc', 0);
                 + "      \"-self-closing\": \"true\"\n"
                 + "    },\n"
                 + "    \"#text1\": \"t\\n\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1573,7 +1583,8 @@ _.repeat('abc', 0);
                 + "      \"c\"\n"
                 + "    ],\n"
                 + "    \"#comment\": \"d\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml2)));
         final String xml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -1716,7 +1727,8 @@ _.repeat('abc', 0);
                 + "    \"name\": \"Tanmay Patil\",\n"
                 + "    \"company\": \"TutorialsPoint\",\n"
                 + "    \"phone\": \"(011) 123-4567\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
@@ -1738,7 +1750,8 @@ _.repeat('abc', 0);
                 + "  \"a\": {\n"
                 + "    \"-__n__\": \"1\",\n"
                 + "    \"-self-closing\": \"true\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}", U.toJson((Map<String, Object>) U.fromXml(xml2)));
         final String xml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<a id=\"1\" null=\"true\"/>";
@@ -1857,7 +1870,8 @@ _.repeat('abc', 0);
                 + "    \"b\": {\n"
                 + "      \"-number\": \"true\"\n"
                 + "    }\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml6)));
         final String json = "{\n"
@@ -1916,7 +1930,8 @@ _.repeat('abc', 0);
                 + "    \"b\": {\n"
                 + "      \"-boolean\": \"true\"\n"
                 + "    }\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml3)));
         final String json = "{\n"
@@ -1974,19 +1989,22 @@ _.repeat('abc', 0);
         final String xml = "<a empty-array=\"true\"></a>";
         final String json = "{\n"
                 + "  \"a\": [\n"
-                + "  ]\n"
+                + "  ],\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json, U.toJson((Map<String, Object>) U.fromXml(xml)));
         final String xml2 = "<a empty-array=\"a\"></a>";
         final String json2 = "{\n"
                 + "  \"a\": {\n"
                 + "    \"-empty-array\": \"a\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json2, U.toJson((Map<String, Object>) U.fromXml(xml2)));
         final String xml3 = "<a empty-array=\"true\">1</a>";
         final String json3 = "{\n"
-                + "  \"a\": \"1\"\n"
+                + "  \"a\": \"1\",\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json3, U.toJson((Map<String, Object>) U.fromXml(xml3)));
         final String xml4 = "<a empty-array=\"true\" array=\"true\"></a>";
@@ -1994,14 +2012,16 @@ _.repeat('abc', 0);
                 + "  \"a\": [\n"
                 + "    [\n"
                 + "    ]\n"
-                + "  ]\n"
+                + "  ],\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json4, U.toJson((Map<String, Object>) U.fromXml(xml4)));
         final String xml5 = "<a empty-array=\"true\" array=\"a\"></a>";
         final String json5 = "{\n"
                 + "  \"a\": {\n"
                 + "    \"-array\": \"a\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json5, U.toJson((Map<String, Object>) U.fromXml(xml5)));
         final String xml6 = "<a empty-array=\"true\" array=\"true\">1</a>";
@@ -2009,7 +2029,8 @@ _.repeat('abc', 0);
                 + "  \"a\": {\n"
                 + "    \"-array\": \"true\",\n"
                 + "    \"#text\": \"1\"\n"
-                + "  }\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}";
         assertEquals(json6, U.toJson((Map<String, Object>) U.fromXml(xml6)));
     }
@@ -2055,6 +2076,19 @@ _.repeat('abc', 0);
                 + "  \"#standalone\": \"no\"\n"
                 + "}";
         assertEquals(xml5, U.toXml((Map<String, Object>) U.fromJson(json5)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toJsonFromXml22() {
+        final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a b=\">c\"></a>";
+        final String json = "{\n"
+                + "  \"a\": {\n"
+                + "    \"-b\": \">c\"\n"
+                + "  }\n"
+                + "}";
+        assertEquals(json, U.toJson((Map<String, Object>) U.fromXml(xml)));
+        assertEquals("", Xml.getAttributes(0, ""));
     }
 
     @SuppressWarnings("unchecked")
@@ -2573,11 +2607,14 @@ _.repeat('abc', 0);
                 + "  <element array=\"true\" number=\"true\">0.0</element>\n"
                 + "  <element array=\"true\" number=\"true\">0.0</element>\n"
                 + "</root>";
-        assertEquals("[\n"
-                + "  0.0,\n"
-                + "  0.0\n"
-                + "]",
-            U.toJson((List<Object>) U.fromXml(xml)));
+        assertEquals("{\n"
+                + "  \"root\": [\n"
+                + "    0.0,\n"
+                + "    0.0\n"
+                + "  ],\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
+                + "}",
+            U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
 
     @SuppressWarnings("unchecked")
@@ -2597,6 +2634,19 @@ _.repeat('abc', 0);
                 + "  </element>\n"
                 + "</root>",
             U.toXml((List<Object>) U.fromJson(json)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toXmlFromJson28() {
+        final String json = "{\n"
+                + "  \"root\": [\n"
+                + "  ],\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
+                + "}";
+        final String xml = "<root empty-array=\"true\"></root>";
+        assertEquals(xml, U.toXml((Map<String, Object>) U.fromJson(json)));
+        assertEquals(json, U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
 
     @SuppressWarnings("unchecked")

@@ -33,6 +33,7 @@ public final class Xml {
     private static final String COMMENT = "#comment";
     private static final String ENCODING = "#encoding";
     private static final String STANDALONE = "#standalone";
+    private static final String OMITXMLDECLARATION = "#omit-xml-declaration";
     private static final String YES = "yes";
     private static final String TEXT = "#text";
     private static final String NUMBER = "-number";
@@ -52,6 +53,7 @@ public final class Xml {
     private static final String NULL_ATTR = "-null";
     private static final String EMPTY_ARRAY = "-empty-array";
     private static final String QUOT = "&quot;";
+    private static final String XML_HEADER = "<?xml ";
     private static final java.nio.charset.Charset UTF_8 = java.nio.charset.Charset.forName("UTF-8");
     private static final java.util.regex.Pattern ATTRS = java.util.regex.Pattern.compile(
         "((?:(?!\\s|=).)*)\\s*?=\\s*?[\"']?((?:(?<=\")(?:(?<=\\\\)\"|[^\"])*|(?<=')"
@@ -766,6 +768,9 @@ public final class Xml {
                 case '\t':
                     sb.append("\t");
                     break;
+                case '€':
+                    sb.append("€");
+                    break;
                 default:
                     if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
                         || ch >= '\u2000' && ch <= '\u20FF') {
@@ -843,19 +848,8 @@ public final class Xml {
 
     public static String toXml(Collection collection, XmlStringBuilder.Step identStep) {
         final XmlStringBuilder builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(), "");
-        builder.append("<root");
-        if (collection != null && collection.isEmpty()) {
-            builder.append(" empty-array=\"true\"");
-        }
-        builder.append(">").incIdent();
-        if (collection != null && !collection.isEmpty()) {
-            builder.newLine();
-        }
-        XmlArray.writeXml(collection, null, builder, false, U.<String>newLinkedHashSet(), false);
-        if (collection != null && !collection.isEmpty()) {
-            builder.newLine();
-        }
-        return builder.append("</root>").toString();
+        writeArray(collection, builder);
+        return builder.toString();
     }
 
     public static String toXml(Collection collection) {
@@ -873,6 +867,10 @@ public final class Xml {
             builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(),
                 " standalone=\"" + (YES.equals(map.get(STANDALONE)) ? YES : "no") + "\"");
             localMap.remove(STANDALONE);
+        } else if (map != null && map.containsKey(OMITXMLDECLARATION)) {
+            localMap = (Map) U.clone(map);
+            builder = new XmlStringBuilderWithoutHeader(identStep, 0);
+            localMap.remove(OMITXMLDECLARATION);
         } else {
             builder = new XmlStringBuilderWithoutRoot(identStep, UTF_8.name(), "");
             localMap = map;
@@ -884,11 +882,32 @@ public final class Xml {
     private static void checkLocalMap(final XmlStringBuilder builder, final Map localMap) {
         if (localMap == null || localMap.size() != 1
             || XmlValue.getMapKey(localMap).startsWith("-")
-            || ((Map.Entry) localMap.entrySet().iterator().next()).getValue() instanceof List) {
-            XmlObject.writeXml(localMap, getRootName(localMap), builder, false, U.<String>newLinkedHashSet(), false);
+            || XmlValue.getMapValue(localMap) instanceof List) {
+            if ("root".equals(XmlValue.getMapKey(localMap))) {
+                writeArray((List) XmlValue.getMapValue(localMap), builder);
+            } else {
+                XmlObject.writeXml(localMap, getRootName(localMap), builder, false,
+                    U.<String>newLinkedHashSet(), false);
+            }
         } else {
             XmlObject.writeXml(localMap, null, builder, false, U.<String>newLinkedHashSet(), false);
         }
+    }
+
+    private static void writeArray(final Collection collection, final XmlStringBuilder builder) {
+        builder.append("<root");
+        if (collection != null && collection.isEmpty()) {
+            builder.append(" empty-array=\"true\"");
+        }
+        builder.append(">").incIdent();
+        if (collection != null && !collection.isEmpty()) {
+            builder.newLine();
+        }
+        XmlArray.writeXml(collection, null, builder, false, U.<String>newLinkedHashSet(), false);
+        if (collection != null && !collection.isEmpty()) {
+            builder.newLine();
+        }
+        builder.append("</root>");
     }
 
     private static XmlStringBuilder checkStandalone(String encoding, XmlStringBuilder.Step identStep,
@@ -1072,19 +1091,32 @@ public final class Xml {
             final org.w3c.dom.Node currentNode) {
         final Map<String, Object> attrMapLocal = U.newLinkedHashMap();
         if (currentNode.getAttributes().getLength() > 0) {
-            final java.util.regex.Matcher matcher = ATTRS.matcher(source.substring(
-                    sourceIndex[0], source.indexOf('>', sourceIndex[0])));
+            final java.util.regex.Matcher matcher = ATTRS.matcher(getAttributes(sourceIndex[0], source));
             while (matcher.find()) {
                 addNodeValue(attrMapLocal, '-' + matcher.group(1), matcher.group(2), nodeMapper, uniqueIds);
             }
         }
-        if (source.substring(sourceIndex[0], source.indexOf('>', sourceIndex[0])).endsWith("/")
+        if (getAttributes(sourceIndex[0], source).endsWith("/")
                 && !attrMapLocal.containsKey(SELF_CLOSING) && (attrMapLocal.size() != 1
                 || ((!attrMapLocal.containsKey(STRING) || !TRUE.equals(attrMapLocal.get(STRING)))
                 && (!attrMapLocal.containsKey(NULL_ATTR) || !TRUE.equals(attrMapLocal.get(NULL_ATTR)))))) {
             attrMapLocal.put(SELF_CLOSING, TRUE);
         }
         return createMap(currentNode, nodeMapper, attrMapLocal, uniqueIds, source, sourceIndex);
+    }
+
+    static String getAttributes(final int sourceIndex, final String source) {
+        boolean scanQuote = false;
+        for (int index = sourceIndex; index < source.length(); index += 1) {
+            if (source.charAt(index) == '"') {
+                scanQuote = !scanQuote;
+                continue;
+            }
+            if (!scanQuote && source.charAt(index) == '>') {
+                return source.substring(sourceIndex, index);
+            }
+        }
+        return "";
     }
 
     @SuppressWarnings("unchecked")
@@ -1153,22 +1185,41 @@ public final class Xml {
                     return object;
                 }
             }, Collections.<String, Object>emptyMap(), new int[] {1, 1, 1}, xml, new int[] {0});
+            final Map<String, String> headerAttributes = getHeaderAttributes(xml);
             if (document.getXmlEncoding() != null && !"UTF-8".equalsIgnoreCase(document.getXmlEncoding())) {
                 ((Map) result).put(ENCODING, document.getXmlEncoding());
-                if (document.getXmlStandalone()) {
-                    ((Map) result).put(STANDALONE, YES);
+                if (headerAttributes.containsKey(STANDALONE.substring(1))) {
+                    ((Map) result).put(STANDALONE, headerAttributes.get(STANDALONE.substring(1)));
                 }
-            } else if (document.getXmlStandalone()) {
-                ((Map) result).put(STANDALONE, YES);
+            } else if (headerAttributes.containsKey(STANDALONE.substring(1))) {
+                ((Map) result).put(STANDALONE, headerAttributes.get(STANDALONE.substring(1)));
             } else if (((Map.Entry) ((Map) result).entrySet().iterator().next()).getKey().equals("root")
                 && (((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof List
                 || ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue() instanceof Map)) {
-                return ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue();
+                if (xml.startsWith(XML_HEADER)) {
+                    return ((Map.Entry) ((Map) result).entrySet().iterator().next()).getValue();
+                } else {
+                    ((Map) result).put(OMITXMLDECLARATION, YES);
+                }
+            } else if (!xml.startsWith(XML_HEADER)) {
+                ((Map) result).put(OMITXMLDECLARATION, YES);
             }
             return result;
         } catch (Exception ex) {
             throw new IllegalArgumentException(ex);
         }
+    }
+
+    private static Map<String, String> getHeaderAttributes(final String xml) {
+        final Map<String, String> result = U.newLinkedHashMap();
+        if (xml.startsWith(XML_HEADER)) {
+            final String xmlLocal = xml.substring(XML_HEADER.length(), xml.indexOf("?>", XML_HEADER.length()));
+            final java.util.regex.Matcher matcher = ATTRS.matcher(xmlLocal);
+            while (matcher.find()) {
+                result.put(matcher.group(1), matcher.group(2));
+            }
+        }
+        return result;
     }
 
     private static org.w3c.dom.Document createDocument(final String xml)

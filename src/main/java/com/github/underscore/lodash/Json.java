@@ -333,7 +333,7 @@ public final class Json {
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 builder.fillSpaces().append(builder.type.getWrapLine());
-                builder.append(JsonValue.unescapeName(String.valueOf(entry.getKey())));
+                builder.append(JsonValue.escape(String.valueOf(entry.getKey())));
                 builder.append(builder.type.getWrapLine());
                 builder.append(':');
                 if (builder.getIdentStep() != JsonStringBuilder.Step.COMPACT) {
@@ -398,56 +398,6 @@ public final class Json {
             }
         }
 
-        public static String unescapeName(final String name) {
-            final int length = name.length();
-            if (length == 0 || "__EE__EMPTY__EE__".equals(name)) {
-                return "";
-            }
-            if ("-__EE__EMPTY__EE__".equals(name)) {
-                return "-";
-            }
-            if (!name.contains("__")) {
-                return name;
-            }
-            StringBuilder result = new StringBuilder();
-            int underlineCount = 0;
-            StringBuilder lastChars = new StringBuilder();
-            outer:
-            for (int i = 0; i < length; ++i) {
-                char ch = name.charAt(i);
-                if (ch == '_') {
-                    lastChars.append(ch);
-                } else {
-                    if (lastChars.length() == 2) {
-                        StringBuilder nameToDecode = new StringBuilder();
-                        for (int j = i; j < length; ++j) {
-                            if (name.charAt(j) == '_') {
-                                underlineCount += 1;
-                                if (underlineCount == 2) {
-                                    try {
-                                        result.append(JsonValue.escape(Base32.decode(nameToDecode.toString())));
-                                    } catch (Base32.DecodingException ex) {
-                                        result.append("__").append(JsonValue.escape(nameToDecode.toString()))
-                                            .append(lastChars);
-                                    }
-                                    i = j;
-                                    underlineCount = 0;
-                                    lastChars.setLength(0);
-                                    continue outer;
-                                }
-                            } else {
-                                nameToDecode.append(name.charAt(j));
-                                underlineCount = 0;
-                            }
-                        }
-                    }
-                    result.append(lastChars).append(ch);
-                    lastChars.setLength(0);
-                }
-            }
-            return result.append(lastChars).toString();
-        }
-
         public static String escape(String s) {
             if (s == null) {
                 return null;
@@ -462,43 +412,43 @@ public final class Json {
             for (int i = 0; i < len; i++) {
                 char ch = s.charAt(i);
                 switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '€':
-                    sb.append("€");
-                    break;
-                default:
-                    if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
-                        || ch >= '\u2000' && ch <= '\u20FF') {
-                        String ss = Integer.toHexString(ch);
-                        sb.append("\\u");
-                        for (int k = 0; k < 4 - ss.length(); k++) {
-                            sb.append('0');
+                    case '"':
+                        sb.append("\\\"");
+                        break;
+                    case '\\':
+                        sb.append("\\\\");
+                        break;
+                    case '\b':
+                        sb.append("\\b");
+                        break;
+                    case '\f':
+                        sb.append("\\f");
+                        break;
+                    case '\n':
+                        sb.append("\\n");
+                        break;
+                    case '\r':
+                        sb.append("\\r");
+                        break;
+                    case '\t':
+                        sb.append("\\t");
+                        break;
+                    case '€':
+                        sb.append("€");
+                        break;
+                    default:
+                        if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
+                            || ch >= '\u2000' && ch <= '\u20FF') {
+                            String ss = Integer.toHexString(ch);
+                            sb.append("\\u");
+                            for (int k = 0; k < 4 - ss.length(); k++) {
+                                sb.append('0');
+                            }
+                            sb.append(ss.toUpperCase());
+                        } else {
+                            sb.append(ch);
                         }
-                        sb.append(ss.toUpperCase());
-                    } else {
-                        sb.append(ch);
-                    }
-                    break;
+                        break;
                 }
             }
         }
@@ -557,32 +507,32 @@ public final class Json {
 
         private Object readValue() {
             switch (current) {
-            case 'n':
-                return readNull();
-            case 't':
-                return readTrue();
-            case 'f':
-                return readFalse();
-            case '"':
-                return readString();
-            case '[':
-                return readArray();
-            case '{':
-                return readObject();
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                return readNumber();
-            default:
-                throw expected("value");
+                case 'n':
+                    return readNull();
+                case 't':
+                    return readTrue();
+                case 'f':
+                    return readFalse();
+                case '"':
+                    return readString();
+                case '[':
+                    return readArray();
+                case '{':
+                    return readObject();
+                case '-':
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    return readNumber();
+                default:
+                    throw expected("value");
             }
         }
 
@@ -688,45 +638,45 @@ public final class Json {
         private void readEscape() {
             read();
             switch (current) {
-            case '"':
-            case '/':
-            case '\\':
-                captureBuffer.append((char) current);
-                break;
-            case 'b':
-                captureBuffer.append('\b');
-                break;
-            case 'f':
-                captureBuffer.append('\f');
-                break;
-            case 'n':
-                captureBuffer.append('\n');
-                break;
-            case 'r':
-                captureBuffer.append('\r');
-                break;
-            case 't':
-                captureBuffer.append('\t');
-                break;
-            case 'u':
-                char[] hexChars = new char[4];
-                boolean isHexCharsDigits = true;
-                for (int i = 0; i < 4; i++) {
-                    read();
-                    if (!isHexDigit()) {
-                        isHexCharsDigits = false;
+                case '"':
+                case '/':
+                case '\\':
+                    captureBuffer.append((char) current);
+                    break;
+                case 'b':
+                    captureBuffer.append('\b');
+                    break;
+                case 'f':
+                    captureBuffer.append('\f');
+                    break;
+                case 'n':
+                    captureBuffer.append('\n');
+                    break;
+                case 'r':
+                    captureBuffer.append('\r');
+                    break;
+                case 't':
+                    captureBuffer.append('\t');
+                    break;
+                case 'u':
+                    char[] hexChars = new char[4];
+                    boolean isHexCharsDigits = true;
+                    for (int i = 0; i < 4; i++) {
+                        read();
+                        if (!isHexDigit()) {
+                            isHexCharsDigits = false;
+                        }
+                        hexChars[i] = (char) current;
                     }
-                    hexChars[i] = (char) current;
-                }
-                if (isHexCharsDigits) {
-                    captureBuffer.append((char) Integer.parseInt(new String(hexChars), 16));
-                } else {
-                    captureBuffer.append("\\u").append(hexChars[0]).append(hexChars[1]).append(hexChars[2])
-                        .append(hexChars[3]);
-                }
-                break;
-            default:
-                throw expected("valid escape sequence");
+                    if (isHexCharsDigits) {
+                        captureBuffer.append((char) Integer.parseInt(new String(hexChars), 16));
+                    } else {
+                        captureBuffer.append("\\u").append(hexChars[0]).append(hexChars[1]).append(hexChars[2])
+                            .append(hexChars[3]);
+                    }
+                    break;
+                default:
+                    throw expected("valid escape sequence");
             }
             read();
         }

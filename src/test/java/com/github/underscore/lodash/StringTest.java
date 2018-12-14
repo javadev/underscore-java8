@@ -937,8 +937,8 @@ _.repeat('abc', 0);
         builder = new XmlStringBuilder();
         Xml.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, null, builder, false,
             Collections.<String>emptySet(), false);
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element array=\"true\" null=\"true\"/>\n</root>",
-            builder.toString());
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n"
+            + "  <element array=\"true\" null=\"true\"/>\n</root>", builder.toString());
         builder = new XmlStringBuilder();
         Xml.XmlArray.writeXml(new ArrayList<String>() { { add((String) null); } }, "name", builder, false,
             Collections.<String>emptySet(), false);
@@ -997,7 +997,8 @@ _.repeat('abc', 0);
             + "    <__GM__ null=\"true\"/>\n  </element>\n</root>",
             U.toXml(Arrays.asList(new LinkedHashMap() { {
                 put("1", "First item"); put("2", "Second item"); put("3", null); } })));
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n  <element array=\"true\" null=\"true\"/>\n</root>",
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n"
+            + "  <element array=\"true\" null=\"true\"/>\n</root>",
             U.toXml(Arrays.asList(new String[] {(String) null})));
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>null</root>",
             U.toXml((Collection) null));
@@ -1434,6 +1435,14 @@ _.repeat('abc', 0);
                 + "  \"#omit-xml-declaration\": \"yes\"\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml)));
+        final String xml2 = "<__FUa>"
+                + "</__FUa>";
+        assertEquals("{\n"
+                + "  \"__FUa\": {\n"
+                + "  },\n"
+                + "  \"#omit-xml-declaration\": \"yes\"\n"
+                + "}",
+                U.toJson((Map<String, Object>) U.fromXml(xml2)));
     }
 
     @SuppressWarnings("unchecked")
@@ -1588,9 +1597,7 @@ _.repeat('abc', 0);
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml2)));
         final String xml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<a>\n"
-                + "  <b>c</b>\n"
-                + "1<![CDATA[2]]>\n"
+                + "<a>\n  <b>c</b>\n1<![CDATA[2]]>\n"
                 + "  <b>c</b>\n"
                 + "</a>";
         final String json3 = "{\n"
@@ -1700,7 +1707,8 @@ _.repeat('abc', 0);
                 + "  }\n"
                 + "}",
                 U.toJson((Map<String, Object>) U.fromXml(xml2)));
-        final String xml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a><b string=\"true\">1</b><c string=\"a\"></c></a>";
+        final String xml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<a><b string=\"true\">1</b><c string=\"a\"></c></a>";
         assertEquals("{\n"
                 + "  \"a\": {\n"
                 + "    \"b\": \"1\",\n"
@@ -2138,6 +2146,25 @@ _.repeat('abc', 0);
             + "}";
         assertEquals(json, U.toJson((Map<String, Object>) U.fromXml(xml)));
         assertEquals(xml, U.toXml((Map<String, Object>) U.fromJson(json)));
+        final String xml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?b c=\"d\"?>\n<a></a>";
+        final String json2 = "{\n"
+            + "  \"?b\": \"c=\\\"d\\\"\",\n"
+            + "  \"a\": {\n"
+            + "  }\n"
+            + "}";
+        assertEquals(json2, U.toJson((Map<String, Object>) U.fromXml(xml2)));
+        assertEquals(xml2, U.toXml((Map<String, Object>) U.fromJson(json2)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void toJsonFromXml25() {
+        final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE address SYSTEM \"address.dtd\"><a></a>";
+        final String json = "{\n"
+            + "  \"a\": {\n"
+            + "  }\n"
+            + "}";
+        assertEquals(json, U.toJson((Map<String, Object>) U.fromXml(xml)));
     }
 
     @SuppressWarnings("unchecked")

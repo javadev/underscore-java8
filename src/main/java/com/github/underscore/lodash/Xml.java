@@ -645,15 +645,15 @@ public final class Xml {
                     builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
                 }
             } else if (value instanceof Number) {
-                    builder.append("<" + XmlValue.escapeName(name, namespaces)
-                        + (addArray ? ARRAY_TRUE : "") + NUMBER_TRUE);
-                    builder.append(value.toString());
-                    builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
+                builder.append("<" + XmlValue.escapeName(name, namespaces)
+                    + (addArray ? ARRAY_TRUE : "") + NUMBER_TRUE);
+                builder.append(value.toString());
+                builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
             } else if (value instanceof Boolean) {
-                    builder.append("<" + XmlValue.escapeName(name, namespaces)
-                        + (addArray ? ARRAY_TRUE : "") + " boolean=\"true\">");
-                    builder.append(value.toString());
-                    builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
+                builder.append("<" + XmlValue.escapeName(name, namespaces)
+                    + (addArray ? ARRAY_TRUE : "") + " boolean=\"true\">");
+                builder.append(value.toString());
+                builder.append("</" + XmlValue.escapeName(name, namespaces) + ">");
             } else {
                 builder.append("<" + XmlValue.escapeName(name, namespaces) + ">");
                 if (value instanceof byte[]) {
@@ -746,49 +746,49 @@ public final class Xml {
             for (int i = 0; i < len; i++) {
                 char ch = s.charAt(i);
                 switch (ch) {
-                case '\'':
-                    sb.append("'");
-                    break;
-                case '&':
-                    sb.append("&amp;");
-                    break;
-                case '<':
-                    sb.append("&lt;");
-                    break;
-                case '>':
-                    sb.append("&gt;");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\t");
-                    break;
-                case '€':
-                    sb.append("€");
-                    break;
-                default:
-                    if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
-                        || ch >= '\u2000' && ch <= '\u20FF') {
-                        String ss = Integer.toHexString(ch);
-                        sb.append("&#x");
-                        for (int k = 0; k < 4 - ss.length(); k++) {
-                            sb.append('0');
+                    case '\'':
+                        sb.append("'");
+                        break;
+                    case '&':
+                        sb.append("&amp;");
+                        break;
+                    case '<':
+                        sb.append("&lt;");
+                        break;
+                    case '>':
+                        sb.append("&gt;");
+                        break;
+                    case '\b':
+                        sb.append("\\b");
+                        break;
+                    case '\f':
+                        sb.append("\\f");
+                        break;
+                    case '\n':
+                        sb.append("\n");
+                        break;
+                    case '\r':
+                        sb.append("\\r");
+                        break;
+                    case '\t':
+                        sb.append("\t");
+                        break;
+                    case '€':
+                        sb.append("€");
+                        break;
+                    default:
+                        if (ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F'
+                            || ch >= '\u2000' && ch <= '\u20FF') {
+                            String ss = Integer.toHexString(ch);
+                            sb.append("&#x");
+                            for (int k = 0; k < 4 - ss.length(); k++) {
+                                sb.append('0');
+                            }
+                            sb.append(ss.toUpperCase()).append(";");
+                        } else {
+                            sb.append(ch);
                         }
-                        sb.append(ss.toUpperCase()).append(";");
-                    } else {
-                        sb.append(ch);
-                    }
-                    break;
+                        break;
                 }
             }
         }
@@ -937,6 +937,7 @@ public final class Xml {
                 if (String.valueOf(entry.getKey()).startsWith("-")) {
                     foundAttrs += 1;
                 } else if (!String.valueOf(entry.getKey()).startsWith(COMMENT)
+                        && !String.valueOf(entry.getKey()).startsWith("?")
                         && (!(entry.getValue() instanceof List) || ((List) entry.getValue()).size() <= 1)) {
                     foundElements += 1;
                 }
@@ -1140,6 +1141,59 @@ public final class Xml {
         return "";
     }
 
+    private static String unescapeName(final String name) {
+        if (name == null) {
+            return name;
+        }
+        final int length = name.length();
+        if ("__EE__EMPTY__EE__".equals(name)) {
+            return "";
+        }
+        if ("-__EE__EMPTY__EE__".equals(name)) {
+            return "-";
+        }
+        if (!name.contains("__")) {
+            return name;
+        }
+        StringBuilder result = new StringBuilder();
+        int underlineCount = 0;
+        StringBuilder lastChars = new StringBuilder();
+        outer:
+        for (int i = 0; i < length; ++i) {
+            char ch = name.charAt(i);
+            if (ch == '_') {
+                lastChars.append(ch);
+            } else {
+                if (lastChars.length() == 2) {
+                    StringBuilder nameToDecode = new StringBuilder();
+                    for (int j = i; j < length; ++j) {
+                        if (name.charAt(j) == '_') {
+                            underlineCount += 1;
+                            if (underlineCount == 2) {
+                                try {
+                                    result.append(Base32.decode(nameToDecode.toString()));
+                                } catch (Base32.DecodingException ex) {
+                                    result.append("__").append(nameToDecode.toString())
+                                        .append(lastChars);
+                                }
+                                i = j;
+                                underlineCount = 0;
+                                lastChars.setLength(0);
+                                continue outer;
+                            }
+                        } else {
+                            nameToDecode.append(name.charAt(j));
+                            underlineCount = 0;
+                        }
+                    }
+                }
+                result.append(lastChars).append(ch);
+                lastChars.setLength(0);
+            }
+        }
+        return result.append(lastChars).toString();
+    }
+
     @SuppressWarnings("unchecked")
     private static void addNodeValue(final Map<String, Object> map, final String name, final Object value,
             final BiFunction<Object, Set<String>, String> elementMapper, final Function<Object, Object> nodeMapper,
@@ -1166,7 +1220,7 @@ public final class Xml {
                 }
             }
         } else {
-            final String elementName = elementMapper.apply(name, namespaces);
+            final String elementName = unescapeName(elementMapper.apply(name, namespaces));
             if (elementName != null) {
                 map.put(elementName, nodeMapper.apply(getValue(value)));
             }
@@ -1261,15 +1315,21 @@ public final class Xml {
         return result;
     }
 
+    private static class MyEntityResolver implements org.xml.sax.EntityResolver {
+        public org.xml.sax.InputSource resolveEntity(String publicId, String systemId) {
+            return new org.xml.sax.InputSource(new java.io.StringReader(""));
+        }
+    }
+
     private static org.w3c.dom.Document createDocument(final String xml)
             throws java.io.IOException, javax.xml.parsers.ParserConfigurationException, org.xml.sax.SAXException {
         final javax.xml.parsers.DocumentBuilderFactory factory =
                 javax.xml.parsers.DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
         final javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
         builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler());
+        builder.setEntityResolver(new MyEntityResolver());
         return builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)));
     }
 

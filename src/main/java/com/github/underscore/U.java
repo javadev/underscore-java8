@@ -560,6 +560,20 @@ public class U<T> {
         return some(iterable, pred);
     }
 
+    public static <E> int count(final Iterable<E> iterable, final Predicate<E> pred) {
+        int result = 0;
+        for (E item : iterable) {
+            if (pred.test(item)) {
+                result += 1;
+            }
+        }
+        return result;
+    }
+
+    public int count(final Predicate<T> pred) {
+        return count(iterable, pred);
+    }
+
     public static <E> boolean contains(final Iterable<E> iterable, final E elem) {
         return some(iterable, new Predicate<E>() {
             @Override
@@ -1320,7 +1334,7 @@ public class U<T> {
         final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(list);
         for (int index = 0; index < lists.length; index += 1) {
-          stack.push(intersection(stack.peek(), lists[index]));
+            stack.push(intersection(stack.peek(), lists[index]));
         }
         return stack.peek();
     }
@@ -1335,7 +1349,7 @@ public class U<T> {
         final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(Arrays.asList(arrays[0]));
         for (int index = 1; index < arrays.length; index += 1) {
-          stack.push(intersection(stack.peek(), Arrays.asList(arrays[index])));
+            stack.push(intersection(stack.peek(), Arrays.asList(arrays[index])));
         }
         return (E[]) stack.peek().toArray();
     }
@@ -1355,7 +1369,7 @@ public class U<T> {
         final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(list);
         for (int index = 0; index < lists.length; index += 1) {
-          stack.push(difference(stack.peek(), lists[index]));
+            stack.push(difference(stack.peek(), lists[index]));
         }
         return stack.peek();
     }
@@ -1370,7 +1384,7 @@ public class U<T> {
         final Deque<List<E>> stack = new ArrayDeque<List<E>>();
         stack.push(Arrays.asList(arrays[0]));
         for (int index = 1; index < arrays.length; index += 1) {
-          stack.push(difference(stack.peek(), Arrays.asList(arrays[index])));
+            stack.push(difference(stack.peek(), Arrays.asList(arrays[index])));
         }
         return (E[]) stack.peek().toArray();
     }
@@ -2332,6 +2346,10 @@ public class U<T> {
             return new Chain<Boolean>(U.some(list, pred));
         }
 
+        public Chain<Integer> count(final Predicate<T> pred) {
+            return new Chain<Integer>(U.count(list, pred));
+        }
+
         public Chain<Boolean> contains(final T elem) {
             return new Chain<Boolean>(U.contains(list, elem));
         }
@@ -2755,9 +2773,7 @@ public class U<T> {
     }
 
     public static void clearInterval(java.util.concurrent.ScheduledFuture scheduledFuture) {
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(true);
-        }
+        clearTimeout(scheduledFuture);
     }
 
     public static <T> List<T> copyOf(final Iterable<T> iterable) {

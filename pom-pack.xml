@@ -5,7 +5,7 @@
   <groupId>com.github.javadev</groupId>
   <artifactId>underscore8</artifactId>
   <packaging>jar</packaging>
-  <version>1.12</version>
+  <version>1.13</version>
   <name>java 8 port of Underscore.js</name>
   <description>The java 8 port of Underscore.js</description>
   <url>https://github.com/javadev/underscore-java8</url>
@@ -101,6 +101,8 @@
                   <option>-keep public class com.github.underscore.lodash.*$LRUCache { *; }</option>
                   <option>-keep public class com.github.underscore.lodash.Json$JsonStringBuilder$Step { *; }</option>
                   <option>-keep public class com.github.underscore.lodash.Xml$XmlStringBuilder$Step { *; }</option>
+                  <option>-keep public class com.github.underscore.lodash.Xml$XmlStringBuilder { *; }</option>
+                  <option>-keep public class com.github.underscore.lodash.Xml$FromType { *; }</option>
                   <option>-keepclassmembers class * { *** newArrayList(); *** newLinkedHashSet(); *** newHashSet(java.lang.Iterable); *** newLinkedHashMap(); }</option>
                   <option>-dontnote com.github.underscore.*$ClassForName</option>
               </options>

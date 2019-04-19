@@ -443,6 +443,16 @@ public class U<T> {
     /*
      * Documented, #filter
      */
+    public static <E> List<E> filter(final Iterable<E> iterable, final Predicate<E> pred) {
+        final List<E> filtered = newArrayList();
+        for (E element : iterable) {
+            if (pred.test(element)) {
+                filtered.add(element);
+            }
+        }
+        return filtered;
+    }
+
     public static <E> List<E> filter(final List<E> list, final Predicate<E> pred) {
         final List<E> filtered = newArrayList();
         for (E element : list) {
@@ -617,6 +627,40 @@ public class U<T> {
     public static <E> boolean contains(final Iterable<E> iterable, final E elem, final int fromIndex) {
         final List<E> list = newArrayList(iterable);
         return contains(list.subList(fromIndex, list.size()), elem);
+    }
+
+    public boolean containsAtLeast(final T value, final int count) {
+        return U.containsAtLeast(this.iterable, value, count);
+    }
+
+    public boolean containsAtMost(final T value, final int count) {
+        return U.containsAtMost(this.iterable, value, count);
+    }
+
+    public static <E> boolean containsAtLeast(final Iterable<E> iterable, final E value, final int count) {
+        int foundItems = 0;
+        for (E element : iterable) {
+            if (element == null ? value == null : element.equals(value)) {
+                foundItems += 1;
+            }
+            if (foundItems >= count) {
+                break;
+            }
+        }
+        return foundItems >= count;
+    }
+
+    public static <E> boolean containsAtMost(final Iterable<E> iterable, final E value, final int count) {
+        int foundItems = size(iterable);
+        for (E element : iterable) {
+            if (!(element == null ? value == null : element.equals(value))) {
+                foundItems -= 1;
+            }
+            if (foundItems <= count) {
+                break;
+            }
+        }
+        return foundItems <= count;
     }
 
     /*
@@ -990,6 +1034,26 @@ public class U<T> {
         return result;
     }
 
+    public Map<T, Integer> toCardinalityMap() {
+        return toCardinalityMap(iterable);
+    }
+
+    public static <K> Map<K, Integer> toCardinalityMap(final Iterable<K> iterable) {
+        Iterator<K> iterator = iterable.iterator();
+        Map<K, Integer> result = newLinkedHashMap();
+
+        while (iterator.hasNext()) {
+            K item = iterator.next();
+
+            if (result.containsKey(item)) {
+                result.put(item, result.get(item) + 1);
+            } else {
+                result.put(item, 1);
+            }
+        }
+        return result;
+    }
+
     /*
      * Documented, #size
      */
@@ -1033,6 +1097,31 @@ public class U<T> {
         return (List<E>[]) partition(Arrays.asList(iterable), pred).toArray(new ArrayList[ARRAY_SIZE_2]);
     }
 
+    public T singleOrNull() {
+        return singleOrNull(iterable);
+    }
+
+    public T singleOrNull(Predicate<T> pred) {
+        return singleOrNull(iterable, pred);
+    }
+
+    public static <E> E singleOrNull(final Iterable<E> iterable) {
+        Iterator<E> iterator = iterable.iterator();
+        if (!iterator.hasNext()) {
+            return null;
+        }
+        E result = iterator.next();
+
+        if (iterator.hasNext()) {
+            result = null;
+        }
+        return result;
+    }
+
+    public static <E> E singleOrNull(final Iterable<E> iterable, Predicate<E> pred) {
+        return singleOrNull(filter(iterable, pred));
+    }
+
     /*
      * Documented, #first
      */
@@ -1046,23 +1135,32 @@ public class U<T> {
     }
 
     public static <E> List<E> first(final List<E> list, final int n) {
-        return list.subList(0, Math.min(n, list.size()));
+        return list.subList(0, Math.min(n < 0 ? 0 : n, list.size()));
     }
 
     public T first() {
-        return iterable.iterator().next();
+        return first(iterable);
     }
 
     public List<T> first(final int n) {
-        return ((List<T>) iterable).subList(0, n);
+        return first(newArrayList(iterable), n);
     }
 
     public static <E> E first(final Iterable<E> iterable, final Predicate<E> pred) {
         return filter(newArrayList(iterable), pred).iterator().next();
     }
 
+    public static <E> List<E> first(final Iterable<E> iterable, final Predicate<E> pred, final int n) {
+        List<E> list = filter(newArrayList(iterable), pred);
+        return list.subList(0, Math.min(n < 0 ? 0 : n, list.size()));
+    }
+
     public T first(final Predicate<T> pred) {
-        return filter(newArrayList(iterable), pred).iterator().next();
+        return first(newArrayList(iterable), pred);
+    }
+
+    public List<T> first(final Predicate<T> pred, final int n) {
+        return first(newArrayList(iterable), pred, n);
     }
 
     public static <E> E firstOrNull(final Iterable<E> iterable) {
@@ -1071,7 +1169,7 @@ public class U<T> {
     }
 
     public T firstOrNull() {
-        return firstOrNull((List<T>) iterable);
+        return firstOrNull(iterable);
     }
 
     public static <E> E firstOrNull(final Iterable<E> iterable, final Predicate<E> pred) {
@@ -1080,7 +1178,7 @@ public class U<T> {
     }
 
     public T firstOrNull(final Predicate<T> pred) {
-        return firstOrNull((List<T>) iterable, pred);
+        return firstOrNull(iterable, pred);
     }
 
     public static <E> E head(final Iterable<E> iterable) {
@@ -1570,6 +1668,39 @@ public class U<T> {
         return findLastIndex(Arrays.asList(array), pred);
     }
 
+    public static <E extends Comparable<E>> int binarySearch(final Iterable<E> iterable, final E key) {
+        if (key == null) {
+            return first(iterable) == null ? 0 : -1;
+        }
+        int begin = 0;
+        int end = size(iterable) - 1;
+        int numberOfNullValues = 0;
+        List<E> list = new ArrayList<E>();
+        for (E item : iterable) {
+            if (item == null) {
+                numberOfNullValues++;
+                end--;
+            } else {
+                list.add(item);
+            }
+        }
+        while (begin <= end) {
+            int middle = begin + (end - begin) / 2;
+            if (key.compareTo(list.get(middle)) < 0) {
+                end = middle - 1;
+            } else if (key.compareTo(list.get(middle)) > 0) {
+                begin = middle + 1;
+            } else {
+                return middle + numberOfNullValues;
+            }
+        }
+        return -(begin + numberOfNullValues + 1);
+    }
+
+    public static <E extends Comparable<E>> int binarySearch(final E[] array, final E key) {
+        return binarySearch(Arrays.asList(array), key);
+    }
+
     /*
      * Documented, #sortedIndex
      */
@@ -1660,18 +1791,140 @@ public class U<T> {
     }
 
     public static <T> List<List<T>> chunk(final Iterable<T> iterable, final int size) {
+         if (size <= 0) {
+            return newArrayList();
+         }
+        return chunk(iterable, size, size);
+    }
+
+    public static <T> List<List<T>> chunk(final Iterable<T> iterable, final int size, final int step) {
+        if (step <= 0 || size < 0) {
+            return newArrayList();
+        }
         int index = 0;
         int length = size(iterable);
-        final List<List<T>> result = new ArrayList<List<T>>(length / size);
+        final List<List<T>> result = new ArrayList<List<T>>(size == 0 ? size : ((length / size) + 1));
         while (index < length) {
             result.add(newArrayList(iterable).subList(index, Math.min(length, index + size)));
-            index += size;
+            index += step;
+        }
+        return result;
+    }
+
+    public static <T> List<List<T>> chunkFill(final Iterable<T> iterable, final int size, final T fillValue) {
+        if (size <= 0) {
+            return newArrayList();
+        }
+        return chunkFill(iterable, size, size, fillValue);
+    }
+
+    public static <T> List<List<T>> chunkFill(final Iterable<T> iterable, final int size, final int step, final T fillValue) {
+        if (step <= 0 || size < 0) {
+            return newArrayList();
+        }
+        final List<List<T>> result = chunk(iterable, size, step);
+        int difference = size - result.get(result.size() - 1).size();
+        for (int i = difference; 0 < i; i--) {
+            result.get(result.size() - 1).add(fillValue);
         }
         return result;
     }
 
     public List<List<T>> chunk(final int size) {
-        return chunk(getIterable(), size);
+        return chunk(getIterable(), size, size);
+    }
+
+    public List<List<T>> chunk(final int size, final int step) {
+        return chunk(getIterable(), size, step);
+    }
+
+    public List<List<T>> chunkFill(final int size, final T fillvalue) {
+        return chunkFill(getIterable(), size, size, fillvalue);
+    }
+
+    public List<List<T>> chunkFill(final int size, final int step, T fillvalue) {
+        return chunkFill(getIterable(), size, step, fillvalue);
+    }
+
+    public static <T> List<T> cycle(final Iterable<T> iterable, final int times) {
+        int size = Math.abs(size(iterable) * times);
+        if (size == 0) {
+            return newArrayList();
+        }
+        List<T> list = newArrayListWithExpectedSize(size);
+        int round = 0;
+        if (times > 0) {
+            while (round < times) {
+                for (T element : iterable) {
+                    list.add(element);
+                }
+                round++;
+            }
+        } else {
+            list = cycle(U.reverse(iterable), -times);
+        }
+        return list;
+    }
+
+    public List<T> cycle(final int times) {
+        return cycle(value(), times);
+    }
+
+    public static <T> List<T> repeat(final T element, final int times) {
+        if (times <= 0) {
+            return newArrayList();
+        }
+        List<T> result = newArrayListWithExpectedSize(times);
+        for (int i = 0; i < times; i++) {
+            result.add(element);
+        }
+        return result;
+    }
+
+    public static <T> List<T> interpose(final Iterable<T> iterable, final T interElement) {
+        if (interElement == null) {
+            return newArrayList(iterable);
+        }
+        int size = size(iterable);
+        int index = 0;
+        List<T> array = newArrayListWithExpectedSize(size * 2);
+        for (T elem : iterable) {
+            array.add(elem);
+            if (index + 1 < size) {
+                array.add(interElement);
+                index++;
+            }
+        }
+        return array;
+    }
+
+    public static <T> List<T> interposeByList(final Iterable<T> iterable, final Iterable<T> interIter) {
+        if (interIter == null) {
+            return newArrayList(iterable);
+        }
+        List<T> interList = newArrayList(interIter);
+        if (isEmpty(interIter)) {
+            return newArrayList(iterable);
+        }
+        int size = size(iterable);
+        List<T> array = newArrayListWithExpectedSize(size + interList.size());
+        int index = 0;
+        for (T element : iterable) {
+            array.add(element);
+            if (index < interList.size() && index + 1 < size) {
+                array.add(interList.get(index));
+                index++;
+            }
+        }
+        return array;
+    }
+
+    public List<T> interpose(final T element) {
+        return interpose(value(), element);
+    }
+
+    public List<T> interposeByList(final Iterable<T> interIter) {
+        return interposeByList(value(), interIter);
     }
 
     /*
@@ -2395,6 +2648,14 @@ public class U<T> {
             return new Chain<T>(U.first(list, n));
         }
 
+        public Chain<T> first(final Predicate<T> pred) {
+            return new Chain<T>(U.first(list, pred));
+        }
+
+        public Chain<T> first(final Predicate<T> pred, int n) {
+            return new Chain<T>(U.first(list, pred, n));
+        }
+
         public Chain<T> firstOrNull() {
             return new Chain<T>(U.firstOrNull(list));
         }
@@ -2663,7 +2924,31 @@ public class U<T> {
         }
 
         public Chain<List<T>> chunk(final int size) {
-            return new Chain<List<T>>(U.chunk(value(), size));
+            return new Chain<List<T>>(U.chunk(value(), size, size));
+        }
+
+        public Chain<List<T>> chunk(final int size, final int step) {
+            return new Chain<List<T>>(U.chunk(value(), size, step));
+        }
+
+        public Chain<List<T>> chunkFill(final int size, final T fillValue) {
+            return new Chain<List<T>>(U.chunkFill(value(), size, size, fillValue));
+        }
+
+        public Chain<List<T>> chunkFill(final int size, final int step, final T fillValue) {
+            return new Chain<List<T>>(U.chunkFill(value(), size, step, fillValue));
+        }
+
+        public Chain<T> cycle(final int times) {
+            return new Chain<T>(U.cycle(value(), times));
+        }
+
+        public Chain<T> interpose(final T element) {
+            return new Chain<T>(U.interpose(value(), element));
+        }
+
+        public Chain<T> interposeByList(final Iterable<T> interIter) {
+            return new Chain<T>(U.interposeByList(value(), interIter));
         }
 
         @SuppressWarnings("unchecked")
@@ -2677,6 +2962,10 @@ public class U<T> {
 
         public Chain<T> slice(final int start, final int end) {
             return new Chain<T>(U.slice(list, start, end));
+        }
+
+        public Chain<List<T>> splitAt(final int position) {
+            return new Chain<List<T>>(U.splitAt(list, position));
         }
 
         public Chain<T> reverse() {
@@ -2971,6 +3260,28 @@ public class U<T> {
         return slice(iterable, start, end);
     }
 
+    public static <T> List<List<T>> splitAt(final Iterable<T> iterable, final int position) {
+        List<List<T>> result = newArrayList();
+        int size = size(iterable);
+        final int index;
+        if (position < 0) {
+            index = 0;
+        } else {
+            index = position > size ? size : position;
+        }
+        result.add(newArrayList(iterable).subList(0, index));
+        result.add(newArrayList(iterable).subList(index, size));
+        return result;
+    }
+
+    public static <T> List<List<T>> splitAt(final T[] array, final int position) {
+        return splitAt(Arrays.asList(array), position);
+    }
+
+    public List<List<T>> splitAt(final int position) {
+        return splitAt(iterable, position);
+    }
+
     /*
      * Documented, #reverse
      */
@@ -3145,6 +3456,10 @@ public class U<T> {
             throw new NullPointerException(String.valueOf(errorMessage));
         }
         return reference;
+    }
+
+    public static boolean nonNull(Object obj) {
+        return obj != null;
     }
 
     public static <T> T defaultTo(T value, T defaultValue) {

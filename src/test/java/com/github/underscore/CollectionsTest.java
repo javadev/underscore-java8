@@ -217,6 +217,12 @@ _.map([1, 2, 3], function(num){ return num * 3; });
             }
         });
         assertEquals("[3, 6, 9]", resultObject.toString());
+        List<Integer> result1 = U.map(new int[] {1, 2, 3}, new Function<Integer, Integer>() {
+            public Integer apply(Integer item) {
+                return item * 3;
+            }
+        });
+        assertEquals("[3, 6, 9]", result1.toString());
     }
 
 /*
@@ -531,7 +537,6 @@ var even = _.find([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
 => 2
 */
     @Test
-    @SuppressWarnings("unchecked")
     public void find() {
         final Optional<Integer> result = U.find(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
@@ -561,7 +566,6 @@ var even = _.findLast([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; })
 => 6
 */
     @Test
-    @SuppressWarnings("unchecked")
     public void findLast() {
         final Optional<Integer> result = U.findLast(asList(1, 2, 3, 4, 5, 6),
             new Predicate<Integer>() {
@@ -1353,7 +1357,6 @@ _.max(numbers);
 => 1000
 */
     @Test
-    @SuppressWarnings("unchecked")
     public void max() {
         final Integer result = U.max(asList(10, 5, 100, 2, 1000));
         assertEquals("1000", result.toString());
@@ -1407,7 +1410,6 @@ _.min(numbers);
 => 2
 */
     @Test
-    @SuppressWarnings("unchecked")
     public void min() {
         final Integer result = U.min(asList(10, 5, 100, 2, 1000));
         assertEquals("2", result.toString());
@@ -1740,7 +1742,6 @@ _.sample([1, 2, 3, 4, 5, 6], 3);
 => [1, 6, 2]
 */
     @Test
-    @SuppressWarnings("unchecked")
     public void sample() {
         final Integer result = U.sample(asList(1, 2, 3, 4, 5, 6));
         assertTrue(result >= 1 && result <= 6);

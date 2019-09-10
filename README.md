@@ -9,7 +9,8 @@ underscore-java8
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=javadev_underscore-java8&metric=alert_status)](https://sonarcloud.io/dashboard/index/javadev_underscore-java8)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=javadev_underscore-java8&metric=sqale_rating)](https://sonarcloud.io/dashboard/index/javadev_underscore-java8)
 [![Build Status](https://dev.azure.com/javadevazure/underscore-java/_apis/build/status/javadev.underscore-java8)](https://dev.azure.com/javadevazure/underscore-java/_build/latest?definitionId=2)
-
+![Java Version](https://img.shields.io/badge/java-%3E%3D%201.8-success)
+ 
 Requirements
 ============
 

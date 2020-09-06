@@ -64,19 +64,12 @@ public class UnderscoreTest {
         assertEquals("[example, some, words]", new U(asList("some", "words", "example")).sort().toString());
         assertEquals("[example, some, words]", U.chain(asList("some", "words", "example")).sort().value().toString());
         assertEquals("[4, 5, 7]", U.chain(asList("some", "words", "example"))
-            .map(String::length).sort().value().toString());
-        assertEquals("[example, some, words]", asList(U.sort("some", "words", "example")).toString());
-        final List<Map<String, Object>> stooges = new ArrayList<Map<String, Object>>() { {
-            add(new LinkedHashMap<String, Object>() { { put("name", "curly"); put("age", 25); } });
-            add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
-            add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
-        } };
-        final String youngest = U.chain(stooges)
-              .sortBy(
-                    item -> (Integer) item.get("age"))
-              .map(
-                    item -> item.get("name") + " is " + item.get("age"))
-              .first().item();
+            .map(new Function<String, Integer>() {
+                public Integer apply(String arg) {
+                    return arg.length();
+                }
+            }).sort().value().toString());
+        assertEquals("[example, some, words]", asList(U.sort(new String[] {"some", "words", "example"})).toString());
     }
 
 /*

@@ -64,12 +64,19 @@ public class UnderscoreTest {
         assertEquals("[example, some, words]", new U(asList("some", "words", "example")).sort().toString());
         assertEquals("[example, some, words]", U.chain(asList("some", "words", "example")).sort().value().toString());
         assertEquals("[4, 5, 7]", U.chain(asList("some", "words", "example"))
-            .map(new Function<String, Integer>() {
-                public Integer apply(String arg) {
-                    return arg.length();
-                }
-            }).sort().value().toString());
-        assertEquals("[example, some, words]", asList(U.sort(new String[] {"some", "words", "example"})).toString());
+            .map(String::length).sort().value().toString());
+        assertEquals("[example, some, words]", asList(U.sort("some", "words", "example")).toString());
+        final List<Map<String, Object>> stooges = new ArrayList<Map<String, Object>>() { {
+            add(new LinkedHashMap<String, Object>() { { put("name", "curly"); put("age", 25); } });
+            add(new LinkedHashMap<String, Object>() { { put("name", "moe"); put("age", 21); } });
+            add(new LinkedHashMap<String, Object>() { { put("name", "larry"); put("age", 23); } });
+        } };
+        final String youngest = U.chain(stooges)
+              .sortBy(
+                    item -> (Integer) item.get("age"))
+              .map(
+                    item -> item.get("name") + " is " + item.get("age"))
+              .first().item();
     }
 
 /*
@@ -109,6 +116,7 @@ _.pop(['a', 'b', 'c']);
     @SuppressWarnings("unchecked")
     @Test
     public void pop() {
+        System.out.println("York S1-VG1245CN VALVE,BALL,1.0\"\",2W".replaceAll("\"", "\"\""));
         assertEquals("c", U.pop(asList("a", "b", "c")).fst().toString());
         assertEquals("c", new U(asList("a", "b", "c")).pop().fst().toString());
         assertEquals("c", U.chain(asList("a", "b", "c")).pop().item().fst().toString());
@@ -121,9 +129,9 @@ _.shift(['a', 'b', 'c']);
     @SuppressWarnings("unchecked")
     @Test
     public void shift() {
-        assertEquals("a", U.shift(asList("a", "b", "c")).fst().toString());
+        assertEquals("a", U.shift(asList("a", "b", "c")).fst());
         assertEquals("a", new U(asList("a", "b", "c")).shift().fst().toString());
-        assertEquals("a", U.chain(asList("a", "b", "c")).shift().item().fst().toString());
+        assertEquals("a", U.chain(asList("a", "b", "c")).shift().item().fst());
     }
 
 /*

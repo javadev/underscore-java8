@@ -109,7 +109,6 @@ _.pop(['a', 'b', 'c']);
     @SuppressWarnings("unchecked")
     @Test
     public void pop() {
-        System.out.println("York S1-VG1245CN VALVE,BALL,1.0\"\",2W".replaceAll("\"", "\"\""));
         assertEquals("c", U.pop(asList("a", "b", "c")).fst().toString());
         assertEquals("c", new U(asList("a", "b", "c")).pop().fst().toString());
         assertEquals("c", U.chain(asList("a", "b", "c")).pop().item().fst().toString());

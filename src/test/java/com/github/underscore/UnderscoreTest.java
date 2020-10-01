@@ -121,9 +121,9 @@ _.shift(['a', 'b', 'c']);
     @SuppressWarnings("unchecked")
     @Test
     public void shift() {
-        assertEquals("a", U.shift(asList("a", "b", "c")).fst());
+        assertEquals("a", U.shift(asList("a", "b", "c")).fst().toString());
         assertEquals("a", new U(asList("a", "b", "c")).shift().fst().toString());
-        assertEquals("a", U.chain(asList("a", "b", "c")).shift().item().fst());
+        assertEquals("a", U.chain(asList("a", "b", "c")).shift().item().fst().toString());
     }
 
 /*
@@ -390,6 +390,7 @@ _.elementAtOrNull(arr, 3) // => null
                 }
             });
         assertEquals(1L, U.chain(iterable, 5).first().item()[0]);
+        U.of(iterable, 5);
         class MyIterable<T> implements Iterable<T> {
             public Iterator<T> iterator() {
                 return new Iterator<T>() {

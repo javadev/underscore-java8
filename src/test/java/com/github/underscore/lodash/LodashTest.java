@@ -539,7 +539,8 @@ _.set({"a":[{"b":{"c":"d"}}]}, "a[0].b.c", "e");
         assertEquals("{\n"
             + "    \"error\": {\n"
             + "        \"message\": \"Missing authentication\",\n"
-            + "        \"status_code\": 401\n"
+            + "        \"status_code\": 401,\n"
+            + "        \"code\": \"unauthorized\"\n"
             + "    }\n"
             + "}", result.text());
     }

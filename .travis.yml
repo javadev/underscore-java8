@@ -9,6 +9,7 @@ jdk:
   - openjdk13
   - openjdk14
   - openjdk15
+  - openjdk16
 
 script:
   - mvn clean install jacoco:report
@@ -18,10 +19,6 @@ addons:
        - travis
    hostname: travis
 
-before_script:
-  - pip install --user codecov
-
 after_success:
-  - codecov
   - pip install --user codecov
   - mvn sonar:sonar -Dsonar.projectKey=javadev_underscore-java8 -Dsonar.organization=javadev-github -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_LOGIN 
